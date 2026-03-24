@@ -12,31 +12,31 @@ export default function AlertsPage() {
     return JSON.parse(localStorage.getItem('dismissedAlerts') || '[]');
   });
 
-  // Telegram state
-  const [telegramChatId, setTelegramChatId] = useState(() => localStorage.getItem('telegram_chat_id') || '');
-  const [telegramEnabled, setTelegramEnabled] = useState(() => localStorage.getItem('telegram_enabled') === 'true');
-  const [showTelegramSetup, setShowTelegramSetup] = useState(false);
   const [telegramLoading, setTelegramLoading] = useState(false);
   const [telegramStatus, setTelegramStatus] = useState(null);
-  const [chatIdInput, setChatIdInput] = useState('');
 
   // Derived data
   const activeAccounts = accounts;
   const activeTransactions = transactions;
 
-  // Send Telegram notification
+  // Send individual notification
   const sendTelegramAlert = useCallback(async (message) => {
-    if (!telegramEnabled || !telegramChatId) return;
     try {
+      // Find chat ID
+      const updatesRes = await fetch(`${API_BASE}/api/telegram/updates`);
+      const updatesData = await updatesRes.json();
+      if (!updatesData.success || !updatesData.chats || updatesData.chats.length === 0) return;
+      const targetChatId = updatesData.chats[0].chatId;
+
       await fetch(`${API_BASE}/api/telegram/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId: telegramChatId, message }),
+        body: JSON.stringify({ chatId: targetChatId, message }),
       });
     } catch (err) {
       console.error('Telegram send failed:', err);
     }
-  }, [telegramEnabled, telegramChatId]);
+  }, []);
 
   // Generate Alerts based on real data
   const alerts = useMemo(() => {
@@ -147,66 +147,42 @@ export default function AlertsPage() {
   };
 
   // Telegram setup handlers
-  const saveTelegramSettings = () => {
-    const id = chatIdInput.trim();
-    if (!id) return;
-    setTelegramChatId(id);
-    localStorage.setItem('telegram_chat_id', id);
-    setTelegramEnabled(true);
-    localStorage.setItem('telegram_enabled', 'true');
-    setShowTelegramSetup(false);
-    setTelegramStatus('saved');
-    setTimeout(() => setTelegramStatus(null), 3000);
-  };
-
-  const toggleTelegram = () => {
-    const newVal = !telegramEnabled;
-    setTelegramEnabled(newVal);
-    localStorage.setItem('telegram_enabled', String(newVal));
-  };
-
-  const sendTestAlert = async () => {
-    if (!telegramChatId) {
-      setShowTelegramSetup(true);
-      return;
-    }
+  const simulateTelegramAlert = async () => {
     setTelegramLoading(true);
+    setTelegramStatus(null);
     try {
+      // Auto-fetch the chat ID from someone who messaged the bot
+      const updatesRes = await fetch(`${API_BASE}/api/telegram/updates`);
+      const updatesData = await updatesRes.json();
+      
+      if (!updatesData.success || !updatesData.chats || updatesData.chats.length === 0) {
+        setTelegramStatus('error_no_chat');
+        setTelegramLoading(false);
+        setTimeout(() => setTelegramStatus(null), 5000);
+        return;
+      }
+
+      // Target the most recent active chat ID
+      const targetChatId = updatesData.chats[0].chatId;
+
+      const summary = activeAlerts.map(a => a.telegramMsg || `• ${a.title}: ${a.description}`).join('\n\n');
+      const textMessage = activeAlerts.length > 0 
+        ? `📱 <b>Finclario Alert Summary</b>\n${activeAlerts.length} active alert(s)\n\n${summary}\n\n—\n🕐 ${new Date().toLocaleString('en-IN')}` 
+        : `✅ <b>Finclario All Clear</b>\n\nNo active alerts right now!\n\n🕐 ${new Date().toLocaleString('en-IN')}`;
+
+      // Send telegram update
       const res = await fetch(`${API_BASE}/api/telegram/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chatId: telegramChatId,
-          message: `✅ <b>Finclario Test Alert</b>\n\nThis is a test notification from your Finclario dashboard.\n\n⚡ Your alerts are working!\n🕐 ${new Date().toLocaleString('en-IN')}`,
-        }),
+        body: JSON.stringify({ chatId: targetChatId, message: textMessage }),
       });
+      
       const data = await res.json();
       if (data.success) {
         setTelegramStatus('sent');
       } else {
         setTelegramStatus('error');
       }
-    } catch {
-      setTelegramStatus('error');
-    }
-    setTelegramLoading(false);
-    setTimeout(() => setTelegramStatus(null), 3000);
-  };
-
-  const pushAllToTelegram = async () => {
-    if (!telegramChatId || activeAlerts.length === 0) return;
-    setTelegramLoading(true);
-    
-    const summary = activeAlerts.map(a => a.telegramMsg || `• ${a.title}: ${a.description}`).join('\n\n');
-    const message = `📱 <b>Finclario Alert Summary</b>\n${activeAlerts.length} active alert(s)\n\n${summary}\n\n—\n🕐 ${new Date().toLocaleString('en-IN')}`;
-    
-    try {
-      await fetch(`${API_BASE}/api/telegram/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId: telegramChatId, message }),
-      });
-      setTelegramStatus('pushed');
     } catch {
       setTelegramStatus('error');
     }
@@ -254,102 +230,37 @@ export default function AlertsPage() {
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-sm">Telegram Notifications</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {telegramEnabled && telegramChatId 
-                  ? `Connected • Chat ID: ${telegramChatId}` 
-                  : 'Get instant alerts on Telegram'}
+                Instantly push all active alerts to your phone
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {telegramChatId && (
-              <button
-                onClick={toggleTelegram}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  telegramEnabled ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-700'
-                }`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
-                  telegramEnabled ? 'translate-x-6' : 'translate-x-1'
-                }`} />
-              </button>
-            )}
             <button
-              onClick={() => { setShowTelegramSetup(!showTelegramSetup); setChatIdInput(telegramChatId); }}
-              className="p-2 rounded-lg text-slate-500 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors"
+              onClick={simulateTelegramAlert}
+              disabled={telegramLoading}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
             >
-              <Settings className="w-4 h-4" />
+              {telegramLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {telegramLoading ? 'Sending...' : 'Simulate Telegram Alert'}
             </button>
           </div>
         </div>
 
-        {showTelegramSetup && (
-          <div className="space-y-3 pt-3 border-t border-blue-200 dark:border-blue-800 animate-slide-up">
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-4 space-y-3">
-              <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
-                <p className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-blue-500" /> Quick Setup:
-                </p>
-                <ol className="list-decimal list-inside space-y-1 ml-1">
-                  <li>Open Telegram and search for your Finclario bot</li>
-                  <li>Send <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-blue-600 dark:text-blue-400 font-mono">/start</code> to the bot</li>
-                  <li>Copy your <strong>Chat ID</strong> from the bot's response and paste below</li>
-                </ol>
-              </div>
-              
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={chatIdInput}
-                  onChange={e => setChatIdInput(e.target.value)}
-                  placeholder="Enter your Telegram Chat ID"
-                  className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                />
-                <button
-                  onClick={saveTelegramSettings}
-                  className="px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold text-sm rounded-xl transition-colors shadow-sm"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Action Row */}
-        {telegramEnabled && telegramChatId && (
-          <div className="flex flex-wrap gap-2 pt-1">
-            <button
-              onClick={sendTestAlert}
-              disabled={telegramLoading}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all disabled:opacity-50"
-            >
-              {telegramLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              Send Test
-            </button>
-            {activeAlerts.length > 0 && (
-              <button
-                onClick={pushAllToTelegram}
-                disabled={telegramLoading}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
-              >
-                {telegramLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
-                Push {activeAlerts.length} Alert{activeAlerts.length !== 1 ? 's' : ''} to Telegram
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Status Toast */}
         {telegramStatus && (
-          <div className={`text-xs font-semibold px-3 py-2 rounded-lg animate-slide-up ${
-            telegramStatus === 'error' 
-              ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-              : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+          <div className={`text-sm font-semibold px-4 py-3 rounded-xl animate-slide-up ${
+            telegramStatus.includes('error') 
+              ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800'
+              : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
           }`}>
-            {telegramStatus === 'sent' && '✅ Test alert sent to Telegram!'}
-            {telegramStatus === 'saved' && '✅ Telegram chat ID saved!'}
-            {telegramStatus === 'pushed' && '✅ All alerts pushed to Telegram!'}
-            {telegramStatus === 'error' && '❌ Failed to send. Check your Chat ID and ensure the bot is running.'}
+            {telegramStatus === 'sent' && '✅ Alert successfully pushed to Telegram!'}
+            {telegramStatus === 'error_no_chat' && (
+              <div className="space-y-1">
+                <p>❌ <b>No Telegram user found.</b></p>
+                <p className="font-normal text-xs opacity-90">Please open Telegram, find your bot, and send a message like "Hi" or "/start" to it first so it knows who to message, then click simulate again!</p>
+              </div>
+            )}
+            {telegramStatus === 'error' && '❌ Failed to send. Ensure you have texted the bot first!'}
           </div>
         )}
       </div>
@@ -390,15 +301,6 @@ export default function AlertsPage() {
                 </div>
                 
                 <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                  {telegramEnabled && telegramChatId && (
-                    <button 
-                      onClick={() => sendTelegramAlert(alert.telegramMsg || `${alert.title}\n${alert.description}`)}
-                      className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                      title="Send to Telegram"
-                    >
-                      <Send className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    </button>
-                  )}
                   <button 
                     onClick={() => dismissAlert(alert.id)}
                     className="p-2 rounded-lg hover:bg-black/10 transition-all"
