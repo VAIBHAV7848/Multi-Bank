@@ -3,14 +3,16 @@ import en from '../translations/en';
 import hi from '../translations/hi';
 import ta from '../translations/ta';
 import mr from '../translations/mr';
+import kn from '../translations/kn';
 
-const translations = { en, hi, ta, mr };
+const translations = { en, hi, ta, mr, kn };
 
 export const LANGUAGES = [
   { code: 'en', label: 'English', native: 'English', flag: '🇬🇧' },
   { code: 'hi', label: 'Hindi', native: 'हिन्दी', flag: '🇮🇳' },
   { code: 'ta', label: 'Tamil', native: 'தமிழ்', flag: '🇮🇳' },
   { code: 'mr', label: 'Marathi', native: 'मराठी', flag: '🇮🇳' },
+  { code: 'kn', label: 'Kannada', native: 'ಕನ್ನಡ', flag: '🇮🇳' },
 ];
 
 const LanguageContext = createContext();
