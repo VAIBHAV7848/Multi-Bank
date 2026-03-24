@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { supabase } from '../lib/supabase';
+
 import { seedDatabase } from '../lib/seedData';
 import { formatCurrency } from '../lib/formatters';
 import { Card, PageTransition } from '../components/ui';
@@ -26,14 +26,9 @@ export default function SetupPage({ onComplete }) {
         const { success } = await seedDatabase(user.id);
         if (success) {
           // Fetch the created accounts to show available banks
-          const { data, error } = await supabase
-            .from('accounts')
-            .select('*')
-            .eq('user_id', user.id);
-            
-          if (error) throw error;
+          const data = JSON.parse(localStorage.getItem('mockAccounts') || '[]');
           
-          setAccounts(data || []);
+          setAccounts(data);
           
           // Pre-connect 3 random accounts for demo
           if (data && data.length > 0) {
