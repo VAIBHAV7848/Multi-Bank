@@ -55,9 +55,9 @@ export default function LoginPage() {
       <PageTransition className="w-full max-w-md p-6 z-10 relative">
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-2 flex items-center justify-center gap-3">
-            <span className="text-blue-400">⚡</span> FinTrack Pro
+            <span className="text-blue-400">⚡</span> Finclario
           </h1>
-          <p className="text-white/70 text-lg">Your intelligence, combined.</p>
+          <p className="text-white/70 text-lg">Clarity for your finances.</p>
         </div>
 
         <Card className="backdrop-blur-xl bg-white/10 dark:bg-slate-900/40 border-white/20">

@@ -78,7 +78,7 @@ export default function AppShell() {
       <aside className="hidden md:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0 z-20 shadow-sm transition-colors">
         <div className="p-6">
           <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">
-            <span className="text-blue-500">⚡</span> FinTrack Pro
+            <span className="text-blue-500">⚡</span> Finclario
           </h1>
         </div>
 
@@ -135,7 +135,7 @@ export default function AppShell() {
           </button>
           
           <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-4 uppercase tracking-wider font-semibold">
-            FinTrack Pro v1.0 • HackArena
+            Finclario v1.0 • HackArena
           </p>
         </div>
       </aside>
