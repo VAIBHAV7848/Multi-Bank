@@ -3,6 +3,9 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
+    { "source": "/api/telegram/send", "destination": "/api/telegram" },
+    { "source": "/api/telegram/updates", "destination": "/api/telegram" },
+    { "source": "/api/gemini/insights", "destination": "/api/gemini" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
