@@ -50,7 +50,13 @@ export function useSupabaseData() {
         if (transactionsError) throw transactionsError;
 
         setAccounts(accountsData || []);
-        setTransactions(transactionsData || []);
+        // Normalize field names to match what UI components expect
+        const normalizedTxns = (transactionsData || []).map(t => ({
+          ...t,
+          merchant: t.merchant_name || t.merchant,
+          created_at: t.date || t.created_at,
+        }));
+        setTransactions(normalizedTxns);
         setLastSynced(new Date());
         setError(null);
       } catch (err) {
