@@ -2,16 +2,45 @@ import React, { useState } from 'react';
 import { Card } from '../components/ui';
 import { Download, FileText, Share2, Mail, Calendar, Filter, ChevronDown } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { useSupabaseData } from '../hooks/useSupabaseData';
 
 export default function ReportsPage() {
   const { addToast } = useToast();
+  const { transactions } = useSupabaseData();
   const [reportType, setReportType] = useState('Income & Expense Summary');
+
+  const generateCSV = () => {
+    if (!transactions || transactions.length === 0) return 'No data available';
+    const headers = ['Date', 'Merchant', 'Category', 'Type', 'Amount'];
+    const rows = transactions.map(t => [
+      (t.date || t.created_at || '').split('T')[0],
+      `"${(t.merchant || t.merchant_name || '').replace(/"/g, '""')}"`,
+      `"${t.category || ''}"`,
+      t.type,
+      t.amount
+    ]);
+    return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  };
 
   const handleDownload = (format) => {
     addToast(`Generating ${format} report...`, 'success');
     setTimeout(() => {
+      if (format === 'CSV') {
+        const csvContent = generateCSV();
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Finclario_${reportType.replace(/\s+/g, '_')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else if (format === 'PDF') {
+        // Native clean print dialog mapping to PDF
+        window.print();
+      }
       addToast(`${format} report downloaded successfully!`, 'success');
-    }, 1500);
+    }, 1000);
   };
 
   return (
@@ -110,7 +139,7 @@ export default function ReportsPage() {
       </Card>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="hover:border-blue-500/50 cursor-pointer transition-colors group">
+        <Card onClick={() => handleDownload('PDF')} className="hover:border-blue-500/50 cursor-pointer transition-colors group">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
               <FileText className="w-6 h-6" />
@@ -121,7 +150,7 @@ export default function ReportsPage() {
             </div>
           </div>
         </Card>
-        <Card className="hover:border-blue-500/50 cursor-pointer transition-colors group">
+        <Card onClick={() => handleDownload('PDF')} className="hover:border-blue-500/50 cursor-pointer transition-colors group">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
               <FileText className="w-6 h-6" />
@@ -132,14 +161,14 @@ export default function ReportsPage() {
             </div>
           </div>
         </Card>
-        <Card className="hover:border-blue-500/50 cursor-pointer transition-colors group">
+        <Card onClick={() => handleDownload('CSV')} className="hover:border-blue-500/50 cursor-pointer transition-colors group">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
               <FileText className="w-6 h-6" />
             </div>
             <div>
               <h4 className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-500 transition-colors">Year-End Summary</h4>
-              <p className="text-xs text-slate-500 mt-1">Generated: 31 Dec 2024</p>
+              <p className="text-xs text-slate-500 mt-1">CSV Format</p>
             </div>
           </div>
         </Card>
