@@ -142,7 +142,7 @@ export default function DashboardPage({ onNavigate }) {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold text-slate-900 dark:text-white">Recent Transactions</h3>
-          <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+          <button onClick={() => onNavigate && onNavigate('transactions')} className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
             View All →
           </button>
         </div>

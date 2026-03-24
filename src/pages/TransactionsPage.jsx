@@ -3,9 +3,11 @@ import { useSupabaseData } from '../hooks/useSupabaseData';
 import { formatCurrency, formatDate, getCategoryColor, getCategoryEmoji } from '../lib/formatters';
 import { Card, PageTransition, Skeleton } from '../components/ui';
 import { Search, Filter, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 export default function TransactionsPage() {
   const { accounts, transactions, loading } = useSupabaseData();
+  const { addToast } = useToast();
   
   // Filters state
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,6 +88,31 @@ export default function TransactionsPage() {
     setCurrentPage(1);
   }, [searchTerm, selectedBank, selectedCategory, dateRange]);
 
+  const handleExportCSV = () => {
+    if (!filteredTransactions.length) {
+      addToast('No transactions to export', 'error');
+      return;
+    }
+    const headers = ['Date', 'Merchant', 'Category', 'Type', 'Amount'];
+    const rows = filteredTransactions.map(t => [
+      (t.date || t.created_at || '').split('T')[0],
+      `"${(t.merchant || t.merchant_name || '').replace(/"/g, '""')}"`,
+      `"${t.category || ''}"`,
+      t.type,
+      t.amount
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Finclario_Transactions.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    addToast('Transactions exported successfully!', 'success');
+  };
+
   if (loading && transactions.length === 0) {
     return (
       <PageTransition className="space-y-6">
@@ -105,7 +132,7 @@ export default function TransactionsPage() {
             Showing {filteredTransactions.length} of {activeTransactions.length} total entries
           </p>
         </div>
-        <button className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium px-4 py-2 rounded-xl transition-colors shadow-sm">
+        <button onClick={handleExportCSV} className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium px-4 py-2 rounded-xl transition-colors shadow-sm">
           <Download className="w-4 h-4" /> Export CSV
         </button>
       </div>

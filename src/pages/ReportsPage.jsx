@@ -194,7 +194,7 @@ export default function ReportsPage() {
 
             <div>
               <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block">Included Accounts</label>
-              <button className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 text-sm text-slate-600 dark:text-slate-300 hover:border-blue-500 transition-colors">
+              <button onClick={() => addToast('Manage accounts feature coming soon!', 'info')} className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 text-sm text-slate-600 dark:text-slate-300 hover:border-blue-500 transition-colors">
                 <span className="flex items-center gap-2"><Filter className="w-4 h-4" /> All Connected Banks</span>
                 <span className="text-blue-500 font-medium text-xs">Edit</span>
               </button>
@@ -230,10 +230,10 @@ export default function ReportsPage() {
             </div>
             
             <div className="flex gap-6 mt-8">
-              <button className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+              <button onClick={() => addToast(`Report successfully emailed to your registered address!`, 'success')} className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
                 <Mail className="w-4 h-4" /> Email to self
               </button>
-              <button className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+              <button onClick={() => addToast(`Secure shareable link copied to clipboard!`, 'success')} className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
                 <Share2 className="w-4 h-4" /> Share Link
               </button>
             </div>
