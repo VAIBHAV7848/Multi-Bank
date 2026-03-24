@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { formatCurrency, formatDate, getCategoryColor, getCategoryEmoji } from '../lib/formatters';
 import { Card, PageTransition, Skeleton } from '../components/ui';
-import { TrendingUp, ArrowUpRight, ArrowDownRight, CreditCard, Building2, Plus } from 'lucide-react';
+import { TrendingUp, ArrowUpRight, ArrowDownRight, CreditCard, Building2, Plus, Server } from 'lucide-react';
 import AddBankModal from '../components/AddBankModal';
+import SetuAAModal from '../components/SetuAAModal';
 
 export default function DashboardPage() {
   const { accounts, transactions, loading } = useSupabaseData();
   const [showAddBank, setShowAddBank] = useState(false);
+  const [showSetuAA, setShowSetuAA] = useState(false);
 
   // Get connected banks from localStorage
   const connectedBankIds = JSON.parse(localStorage.getItem('connectedBanks') || '[]');
@@ -97,9 +99,14 @@ export default function DashboardPage() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold text-slate-900 dark:text-white">Connected Accounts</h3>
-          <button onClick={() => setShowAddBank(true)} className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full transition-colors">
-            <Plus className="w-4 h-4" /> Add Real Bank
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowSetuAA(true)} className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-full transition-colors">
+              <Server className="w-4 h-4 text-emerald-500" /> Link via Setu AA
+            </button>
+            <button onClick={() => setShowAddBank(true)} className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full transition-colors hidden sm:flex">
+              <Plus className="w-4 h-4" /> Add Manual Bank
+            </button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -191,6 +198,7 @@ export default function DashboardPage() {
       </section>
       
       <AddBankModal isOpen={showAddBank} onClose={() => setShowAddBank(false)} />
+      <SetuAAModal isOpen={showSetuAA} onClose={() => setShowSetuAA(false)} onComplete={() => window.location.reload()} />
     </PageTransition>
   );
 }
