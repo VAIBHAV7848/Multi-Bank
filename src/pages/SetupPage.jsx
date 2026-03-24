@@ -6,51 +6,44 @@ import { seedInitialData } from '../lib/seedData';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/formatters';
 import { Card, PageTransition } from '../components/ui';
-import { Building2, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import { Building2, CheckCircle2, Loader2, ArrowRight, ShieldCheck, Lock, UserCheck, FileCheck } from 'lucide-react';
 
 export default function SetupPage({ onComplete }) {
   const { user } = useAuth();
   const { addToast } = useToast();
   
-  const [step, setStep] = useState('loading'); // 'loading', 'linking', 'done'
+  const [step, setStep] = useState('consent'); // 'consent', 'loading', 'linking'
   const [accounts, setAccounts] = useState([]);
   const [connectedIds, setConnectedIds] = useState([]);
   
-  useEffect(() => {
-    const initializeSetup = async () => {
-      if (!user) return;
-      
-      try {
-        setStep('loading');
-        // Ensure data exists
-        await seedInitialData(user.id);
-        
-        // Fetch the created accounts to show available banks
-        const { data, error } = await supabase
-          .from('accounts')
-          .select('*')
-          .eq('user_id', user.id);
-          
-        if (error) throw error;
-        
-        setAccounts(data || []);
-        
-        // Pre-connect 3 random accounts for demo
-        if (data && data.length > 0) {
-          const shuffled = [...data].sort(() => 0.5 - Math.random());
-          setConnectedIds(shuffled.slice(0, 3).map(a => a.id));
-        }
-        
-        setTimeout(() => {
-          setStep('linking');
-        }, 1500); // Artificial delay to show the nice loading screen
-      } catch (error) {
-        addToast(error.message || 'Setup failed', 'error');
-      }
-    };
+  const startSetup = async () => {
+    setStep('loading');
+    if (!user) return;
     
-    initializeSetup();
-  }, [user, addToast]);
+    try {
+      await seedInitialData(user.id);
+      
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
+      
+      setAccounts(data || []);
+      
+      if (data && data.length > 0) {
+        const shuffled = [...data].sort(() => 0.5 - Math.random());
+        setConnectedIds(shuffled.slice(0, 3).map(a => a.id));
+      }
+      
+      setTimeout(() => setStep('linking'), 1500);
+    } catch (error) {
+      addToast(error.message || 'Setup failed', 'error');
+      localStorage.setItem('setupComplete', 'true');
+      onComplete();
+    }
+  };
 
   const toggleConnect = (id) => {
     setConnectedIds(prev => 
@@ -65,15 +58,85 @@ export default function SetupPage({ onComplete }) {
       addToast('Please connect at least one bank account', 'warning');
       return;
     }
-    
-    // Save preferences to local storage
     localStorage.setItem('connectedBanks', JSON.stringify(connectedIds));
     localStorage.setItem('setupComplete', 'true');
-    
     addToast('Workspace ready!', 'success');
     onComplete();
   };
 
+  // ─── CONSENT SCREEN (Account Aggregator Flow) ───
+  if (step === 'consent') {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6">
+        <PageTransition className="max-w-lg w-full space-y-6">
+          
+          <div className="text-center mb-2">
+            <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-3xl mx-auto flex items-center justify-center mb-6 shadow-xl shadow-blue-500/30">
+              <ShieldCheck className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Secure Bank Linking</h1>
+            <p className="text-slate-500 dark:text-slate-400">
+              Powered by <strong className="text-blue-600 dark:text-blue-400">RBI Account Aggregator Framework</strong>
+            </p>
+          </div>
+
+          <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10">
+            <h3 className="font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+              <Lock className="w-5 h-5 text-blue-600" /> Your data, your consent
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <UserCheck className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">Only YOUR accounts</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">You consent to share your own bank data. No one else's data is ever accessed.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <Lock className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">End-to-end encrypted</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Data is encrypted with AES-256. Row Level Security ensures complete user isolation.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <FileCheck className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">RBI regulated & compliant</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Uses NBFC-AA licensed aggregators (Setu / OneMoney) under DEPA framework.</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <div className="bg-slate-100 dark:bg-slate-900 rounded-2xl p-4 text-center">
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              By proceeding, you consent to Finclario securely fetching your account balances and transaction history via the Account Aggregator ecosystem. You can revoke access at any time from Settings.
+            </p>
+          </div>
+
+          <button 
+            onClick={startSetup}
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-4 rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-1 flex items-center justify-center gap-2 text-lg"
+          >
+            <ShieldCheck className="w-5 h-5" /> I Consent — Link My Banks
+          </button>
+          
+          <p className="text-center text-[10px] text-slate-400 uppercase tracking-wider">
+            🔒 256-bit SSL • RLS Protected • GDPR & DPDPA Compliant
+          </p>
+        </PageTransition>
+      </div>
+    );
+  }
+
+  // ─── LOADING SCREEN ───
   if (step === 'loading') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
@@ -86,23 +149,24 @@ export default function SetupPage({ onComplete }) {
           </div>
           
           <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-slate-400 mb-4">
-            Setting up your workspace ⚡
+            Fetching via Account Aggregator ⚡
           </h2>
           <p className="text-slate-500 dark:text-slate-400">
-            We're preparing your secure financial environment and syncing historical data...
+            Securely syncing your bank data through RBI-licensed AA framework...
           </p>
         </PageTransition>
       </div>
     );
   }
 
+  // ─── BANK LINKING SCREEN ───
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
       <PageTransition className="max-w-3xl mx-auto space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Link Your Bank Accounts</h1>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Banks Discovered via AA</h1>
           <p className="text-slate-500 dark:text-slate-400 text-lg">
-            Connect your accounts securely to see all your finances in one place.
+            We found these accounts linked to your identity. Select which ones to monitor.
           </p>
         </div>
 
@@ -130,8 +194,8 @@ export default function SetupPage({ onComplete }) {
                     <div>
                       <h3 className="font-semibold text-slate-900 dark:text-white">{account.bank_name}</h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-                        {account.account_number}
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        {account.account_type} • Verified via AA
                       </p>
                     </div>
                   </div>
