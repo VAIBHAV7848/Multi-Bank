@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
-import { seedInitialData } from '../lib/seedData';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/formatters';
 import { Card, PageTransition } from '../components/ui';
@@ -21,8 +20,6 @@ export default function SetupPage({ onComplete }) {
     if (!user) return;
     
     try {
-      await seedInitialData(user.id);
-      
       const { data, error } = await supabase
         .from('accounts')
         .select('*')

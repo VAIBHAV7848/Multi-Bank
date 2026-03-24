@@ -46,20 +46,6 @@ export default function GoalsPage() {
     return () => supabase.removeChannel(channel);
   }, [userId]);
 
-  // Seed default goals if empty
-  useEffect(() => {
-    if (!loading && goals.length === 0 && userId) {
-      const defaults = [
-        { user_id: userId, name: 'Emergency Fund', icon: 'briefcase', target: 300000, current: 150000, color: 'bg-blue-500', eta: 'Dec 2025' },
-        { user_id: userId, name: 'New Car Downpayment', icon: 'car', target: 500000, current: 120000, color: 'bg-indigo-500', eta: 'Mar 2026' },
-        { user_id: userId, name: 'House Purchase', icon: 'home', target: 2000000, current: 2000000, color: 'bg-emerald-500', eta: 'Achieved' },
-        { user_id: userId, name: 'Europe Vacation', icon: 'flag', target: 400000, current: 85000, color: 'bg-rose-500', eta: 'Oct 2025' },
-      ];
-      supabase.from('goals').insert(defaults).then(({ error }) => {
-        if (!error) supabase.from('goals').select('*').eq('user_id', userId).order('created_at', { ascending: false }).then(({ data }) => setGoals(data || []));
-      });
-    }
-  }, [loading, goals.length, userId]);
 
   const handleAdd = async () => {
     if (!formData.name || !formData.target) { addToast('Name and target required', 'warning'); return; }
