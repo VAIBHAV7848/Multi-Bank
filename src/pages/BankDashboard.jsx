@@ -24,6 +24,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import SetuAAModal from '../components/SetuAAModal';
 
 // Uses relative paths — works on both localhost (via Vite proxy) and Vercel deployment
 const API_BASE = '';
@@ -82,6 +83,7 @@ export default function BankDashboard() {
   const [bankFilter, setBankFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const pollingRef = useRef(null);
 
   // Check URL for returning consent callback
@@ -233,43 +235,56 @@ export default function BankDashboard() {
     }
   };
 
-  // Create consent and redirect
-  const handleLinkBanks = async () => {
-    setError(null);
-    setLinkingStep('creating');
+  // Open secure internal AA simulator
+  const handleLinkBanks = () => {
+    setIsModalOpen(true);
+  };
 
+  // Called when internal simulator completes
+  const handleSimulatorComplete = () => {
+    // We already synced to supersonic, now just refresh the local view natively
+    const mockId = `sim_${Date.now()}`;
+    setConsentId(mockId);
+    setConsentStatus('APPROVED');
+    // Read from supabase to populate UI right away
+    fetchSupabaseDataDirect();
+  };
+
+  const fetchSupabaseDataDirect = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/consent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          redirectUrl: `${window.location.origin}${window.location.pathname}?consent=callback`,
-        }),
-      });
+      setLoading(true);
+      const { data: dbAcc } = await supabase.from('accounts').select('*');
+      const { data: dbTxn } = await supabase.from('transactions').select('*');
+      
+      const formattedAccs = dbAcc.map(a => ({
+        bankName: a.bank_name,
+        maskedAccNumber: a.account_number || a.masked_number || 'XXXX',
+        type: a.account_type,
+        balance: a.balance,
+      }));
+      
+      const formattedTxns = dbTxn.map(t => ({
+        date: t.date || t.created_at,
+        description: t.merchant_name,
+        amount: Number(t.amount),
+        type: t.type.toUpperCase(),
+        bankName: formattedAccs.find(a => a.bankName.includes(t.merchant_name) || a.bankName.includes(a.bankName))?.bankName || formattedAccs[0]?.bankName || 'Linked Bank',
+        category: t.category,
+      }));
 
-      const data = await res.json();
-
-      if (data.success && data.consentId) {
-        setConsentId(data.consentId);
-        localStorage.setItem('setu_consent_id', data.consentId);
-        setConsentStatus('PENDING');
-
-        if (data.redirectURL) {
-          setLinkingStep('redirecting');
-          // Open in new tab so user stays on app
-          window.open(data.redirectURL, '_blank');
-          // Start polling immediately
-          setLinkingStep('polling');
-        } else {
-          setLinkingStep('polling');
-        }
-      } else {
-        setError(data.error || 'Consent creation failed');
-        setLinkingStep(null);
-      }
-    } catch (err) {
-      setError('Could not connect to server. Is backend running on port 3001?');
-      setLinkingStep(null);
+      setAccounts(formattedAccs);
+      setTransactions(formattedTxns);
+      
+      localStorage.setItem('setu_dashboard_data', JSON.stringify({
+         accounts: formattedAccs,
+         transactions: formattedTxns,
+         consentId: `sim_${Date.now()}`,
+         consentStatus: 'APPROVED'
+      }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -380,6 +395,12 @@ export default function BankDashboard() {
             </div>
           </div>
         )}
+        
+        <SetuAAModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          onComplete={handleSimulatorComplete} 
+        />
       </div>
     );
   }
@@ -460,7 +481,7 @@ export default function BankDashboard() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => consentId && fetchTransactions(consentId)}
+            onClick={() => consentId && fetchSupabaseDataDirect()}
             disabled={loading}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors disabled:opacity-50"
           >
