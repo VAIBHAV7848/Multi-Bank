@@ -24,7 +24,9 @@ export default function AIInsightsPage() {
     const now = new Date();
 
     transactions.forEach(t => {
-      if (t.type !== 'debit') return;
+      const type = t.type?.toLowerCase();
+      if (type !== 'debit') return;
+      
       const d = new Date(t.created_at || t.date);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const monthName = d.toLocaleString('default', { month: 'short' });
@@ -53,8 +55,8 @@ export default function AIInsightsPage() {
     }));
 
     // Generate smart insights from real data
-    const totalSpent = transactions.filter(t => t.type === 'debit').reduce((s, t) => s + Number(t.amount), 0);
-    const totalIncome = transactions.filter(t => t.type === 'credit').reduce((s, t) => s + Number(t.amount), 0);
+    const totalSpent = transactions.filter(t => t.type?.toLowerCase() === 'debit').reduce((s, t) => s + Number(t.amount), 0);
+    const totalIncome = transactions.filter(t => t.type?.toLowerCase() === 'credit').reduce((s, t) => s + Number(t.amount), 0);
     const topCategory = Object.entries(catMap).sort((a, b) => b[1] - a[1])[0];
     const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalSpent) / totalIncome) * 100) : 0;
 
@@ -69,7 +71,7 @@ export default function AIInsightsPage() {
     }
     ins.push({ id: 3, type: 'info', icon: <Info className="w-5 h-5 text-blue-500" />, text: <>Predicted next month spend: <strong>{formatCurrency(Math.round(avg))}</strong> based on recent trends.</>, tag: 'Projection' });
     if (transactions.length > 5) {
-      const bigTxn = transactions.filter(t => t.type === 'debit').sort((a, b) => Number(b.amount) - Number(a.amount))[0];
+      const bigTxn = transactions.filter(t => t.type?.toLowerCase() === 'debit').sort((a, b) => Number(b.amount) - Number(a.amount))[0];
       if (bigTxn) ins.push({ id: 4, type: 'info', icon: <AlertTriangle className="w-5 h-5 text-amber-500" />, text: <>Largest single transaction: <strong>{formatCurrency(bigTxn.amount)}</strong> at {bigTxn.merchant || bigTxn.merchant_name}.</>, tag: 'Spotlight' });
     }
 
