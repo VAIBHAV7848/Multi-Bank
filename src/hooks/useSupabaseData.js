@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -18,30 +17,23 @@ export function useSupabaseData() {
     try {
       setLoading(true);
       
-      // Fetch accounts (RLS ensures we only get user's accounts)
-      const { data: accountsData, error: accountsError } = await supabase
-        .from('accounts')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (accountsError) throw accountsError;
+      // Simulate network request
+      await new Promise(r => setTimeout(r, 600));
+
+      const accountsData = JSON.parse(localStorage.getItem('mockAccounts') || '[]');
+      let txData = JSON.parse(localStorage.getItem('mockTransactions') || '[]');
       
-      // Fetch transactions
-      const { data: txData, error: txError } = await supabase
-        .from('transactions')
-        .select(`
-          *,
-          accounts (
-            bank_name,
-            color
-          )
-        `)
-        .order('created_at', { ascending: false });
-        
-      if (txError) throw txError;
+      // Join transactions with account details (like Supabase foreign keys)
+      txData = txData.map(t => {
+        const acc = accountsData.find(a => a.id === t.account_id);
+        return {
+          ...t,
+          accounts: acc ? { bank_name: acc.bank_name, color: acc.color } : null
+        };
+      });
       
-      setAccounts(accountsData || []);
-      setTransactions(txData || []);
+      setAccounts(accountsData);
+      setTransactions(txData);
       setLastSynced(new Date());
       
       if (showToast) {
@@ -58,7 +50,7 @@ export function useSupabaseData() {
   useEffect(() => {
     fetchData();
     
-    // Set up auto-refresh every 60 seconds
+    // Auto-refresh every 60s
     const interval = setInterval(() => {
       fetchData();
     }, 60000);

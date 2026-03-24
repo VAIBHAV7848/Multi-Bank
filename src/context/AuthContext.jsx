@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext();
 
@@ -9,33 +8,47 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    }).catch((err) => {
-      console.error("Supabase getSession error:", err);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    // Mock get initial session
+    const savedUser = localStorage.getItem('mockUser');
+    if (savedUser) {
+      const u = JSON.parse(savedUser);
+      setSession({ user: u });
+      setUser(u);
+    }
+    setLoading(false);
   }, []);
 
   const value = {
     session,
     user,
     loading,
-    signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
-    signUp: (email, password) => supabase.auth.signUp({ email, password }),
-    signOut: () => supabase.auth.signOut(),
+    signIn: async (email, password) => {
+      // Simulate network delay
+      await new Promise(r => setTimeout(r, 800));
+      const u = { id: 'mock-user-123', email };
+      localStorage.setItem('mockUser', JSON.stringify(u));
+      setSession({ user: u });
+      setUser(u);
+      return { data: { user: u }, error: null };
+    },
+    signUp: async (email, password) => {
+      await new Promise(r => setTimeout(r, 800));
+      const u = { id: 'mock-user-123', email };
+      localStorage.setItem('mockUser', JSON.stringify(u));
+      setSession({ user: u });
+      setUser(u);
+      return { data: { user: u }, error: null };
+    },
+    signOut: async () => {
+      localStorage.removeItem('mockUser');
+      setSession(null);
+      setUser(null);
+      // Clear mock data so they can start fresh if needed
+      localStorage.removeItem('setupComplete');
+      localStorage.removeItem('mockAccounts');
+      localStorage.removeItem('mockTransactions');
+      return { error: null };
+    },
   };
 
   return (

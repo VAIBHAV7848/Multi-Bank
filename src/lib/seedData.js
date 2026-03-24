@@ -1,5 +1,4 @@
-import { supabase } from './supabase';
-
+// Mock data arrays for offline use
 const BANKS = [
   { name: 'HDFC Bank', balance: 82450.50, color: '#004c8f', account_number: 'xxxx-4589' },
   { name: 'SBI', balance: 45200.00, color: '#005aa3', account_number: 'xxxx-1204' },
@@ -34,43 +33,31 @@ const INCOME_SOURCES = [
 
 export const seedDatabase = async (userId) => {
   try {
-    // 1. Check if accounts already exist
-    const { data: existingAccounts } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('user_id', userId)
-      .limit(1);
-
-    if (existingAccounts && existingAccounts.length > 0) {
+    const existingAccounts = localStorage.getItem('mockAccounts');
+    
+    if (existingAccounts) {
       return { success: true, message: 'Data already exists', accountsSeeded: false };
     }
 
-    // 2. Insert Accounts
-    const accountsToInsert = BANKS.map(bank => ({
+    // Generate Mock Accounts
+    const insertedAccounts = BANKS.map((bank, i) => ({
       ...bank,
-      user_id: userId
+      bank_name: bank.name, // Ensure exact key match
+      id: `acc-${i}-${userId}`,
+      user_id: userId,
+      created_at: new Date().toISOString()
     }));
 
-    const { data: insertedAccounts, error: accountsError } = await supabase
-      .from('accounts')
-      .insert(accountsToInsert)
-      .select();
+    localStorage.setItem('mockAccounts', JSON.stringify(insertedAccounts));
 
-    if (accountsError) throw accountsError;
-
-    // 3. Generate Transactions
+    // Generate Mock Transactions
     const transactionsToInsert = [];
     const now = new Date();
     
-    // Generate exactly 60 transactions over the last 6 months
+    // Exactly 60 transactions
     for (let i = 0; i < 60; i++) {
-      // Random date within last 180 days
       const date = new Date(now.getTime() - Math.random() * 180 * 24 * 60 * 60 * 1000);
-      
-      // Random account
       const account = insertedAccounts[Math.floor(Math.random() * insertedAccounts.length)];
-      
-      // 85% debit, 15% credit
       const isDebit = Math.random() > 0.15;
       
       if (isDebit) {
@@ -78,6 +65,7 @@ export const seedDatabase = async (userId) => {
         const amount = Math.floor(Math.random() * (merchantInfo.max - merchantInfo.min + 1)) + merchantInfo.min;
         
         transactionsToInsert.push({
+          id: `tx-deb-${i}`,
           user_id: userId,
           account_id: account.id,
           merchant: merchantInfo.name,
@@ -91,6 +79,7 @@ export const seedDatabase = async (userId) => {
         const amount = Math.floor(Math.random() * (incomeInfo.max - incomeInfo.min + 1)) + incomeInfo.min;
         
         transactionsToInsert.push({
+          id: `tx-cre-${i}`,
           user_id: userId,
           account_id: account.id,
           merchant: incomeInfo.name,
@@ -102,14 +91,11 @@ export const seedDatabase = async (userId) => {
       }
     }
 
-    // Insert all transactions at once
-    const { error: txError } = await supabase
-      .from('transactions')
-      .insert(transactionsToInsert);
+    // Sort descending by date
+    transactionsToInsert.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    localStorage.setItem('mockTransactions', JSON.stringify(transactionsToInsert));
 
-    if (txError) throw txError;
-
-    return { success: true, message: 'Seeded successfully', accountsSeeded: true };
+    return { success: true, message: 'Mock data seeded successfully', accountsSeeded: true };
 
   } catch (error) {
     console.error('Seeding error:', error);
