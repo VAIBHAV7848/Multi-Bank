@@ -54,16 +54,37 @@ export function AuthProvider({ children }) {
     profile,
     loading,
     refreshProfile,
-    signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
+    signIn: async (email, password) => {
+      try {
+        const res = await supabase.auth.signInWithPassword({ email, password });
+        if (res.error) throw res.error;
+        return res;
+      } catch (err) {
+        console.warn('Supabase Auth failed, entering Hackathon Demo Mode:', err.message);
+        // HACKATHON BYPASS: Allow login with ANY credentials for the demo
+        const mockUser = {
+          id: 'demo-user-id',
+          email: email || 'jayashriingale720@gmail.com',
+          user_metadata: { full_name: 'Demo User' }
+        };
+        const mockSession = { user: mockUser, access_token: 'mock-token' };
+        setSession(mockSession);
+        setUser(mockUser);
+        setProfile({ display_name: 'Finclario User', bio: 'Finclario Enthusiast' });
+        return { data: { user: mockUser, session: mockSession }, error: null };
+      }
+    },
     signUp: (email, password) => supabase.auth.signUp({ email, password }),
     signInWithGoogle: () => supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin }
     }),
-    signOut: () => {
+    signOut: async () => {
       localStorage.removeItem('setupComplete');
       setProfile(null);
-      return supabase.auth.signOut();
+      setSession(null);
+      setUser(null);
+      return await supabase.auth.signOut();
     },
   };
 
