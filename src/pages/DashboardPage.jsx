@@ -159,7 +159,7 @@ export default function DashboardPage({ onNavigate }) {
                       {getCategoryEmoji(txn.category)}
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900 dark:text-white">{txn.merchant}</p>
+                      <p className="font-bold text-slate-900 dark:text-white">{txn.merchant_name || txn.merchant}</p>
                       <div className="flex items-center gap-2 text-xs font-medium mt-1">
                         <span className="text-slate-500">{formatDate(txn.created_at)}</span>
                         <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
@@ -175,11 +175,11 @@ export default function DashboardPage({ onNavigate }) {
                   
                   <div className="text-right">
                     <p className={`font-bold text-lg ${
-                      txn.type === 'credit' 
+                      txn.type?.toLowerCase() === 'credit' 
                         ? 'text-mint dark:text-emerald-400' 
                         : 'text-slate-900 dark:text-white'
                     }`}>
-                      {txn.type === 'credit' ? '+' : '-'}{formatCurrency(txn.amount)}
+                      {txn.type?.toLowerCase() === 'credit' ? '+' : '-'}{formatCurrency(txn.amount)}
                     </p>
                     <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full inline-block mt-1 ${getCategoryColor(txn.category)}`}>
                       {txn.category}
