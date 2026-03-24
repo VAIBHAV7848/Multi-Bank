@@ -50,7 +50,7 @@ export default function AddBankModal({ isOpen, onClose }) {
       user_id: session.user.id,
       bank_name: bankInfo.BANK,
       account_name: `${accountType} - ${bankInfo.BRANCH}`,
-      account_number: `XXXX-${accountNumber.slice(-4)}`,
+      masked_number: `XXXX-${accountNumber.slice(-4)}`,
       account_type: accountType,
       balance: Number(balance),
       color: color,

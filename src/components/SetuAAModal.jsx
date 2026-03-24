@@ -48,7 +48,7 @@ export default function SetuAAModal({ isOpen, onClose, onComplete }) {
         user_id: session.user.id,
         bank_name: acc.bank,
         account_name: `${acc.type} - ${acc.mask}`,
-        account_number: acc.mask,
+        masked_number: acc.mask,
         account_type: 'Savings',
         balance: acc.balance,
         color: acc.color
