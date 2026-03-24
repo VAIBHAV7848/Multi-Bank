@@ -147,7 +147,7 @@ export default function AlertsPage() {
   };
 
   // Telegram setup handlers
-  const simulateTelegramAlert = async () => {
+  const simulateTelegramAlert = useCallback(async () => {
     setTelegramLoading(true);
     setTelegramStatus(null);
     try {
@@ -167,7 +167,7 @@ export default function AlertsPage() {
 
       const summary = activeAlerts.map(a => a.telegramMsg || `• ${a.title}: ${a.description}`).join('\n\n');
       const textMessage = activeAlerts.length > 0 
-        ? `📱 <b>Finclario Alert Summary</b>\n${activeAlerts.length} active alert(s)\n\n${summary}\n\n—\n🕐 ${new Date().toLocaleString('en-IN')}` 
+        ? `📱 <b>Finclario Auto Alert</b>\n${activeAlerts.length} active alert(s) detected\n\n${summary}\n\n—\n🕐 ${new Date().toLocaleString('en-IN')}` 
         : `✅ <b>Finclario All Clear</b>\n\nNo active alerts right now!\n\n🕐 ${new Date().toLocaleString('en-IN')}`;
 
       // Send telegram update
@@ -188,7 +188,18 @@ export default function AlertsPage() {
     }
     setTelegramLoading(false);
     setTimeout(() => setTelegramStatus(null), 3000);
-  };
+  }, [activeAlerts]);
+
+  // HACKATHON DEMO: Automatically send alert once per session on page load
+  useEffect(() => {
+    if (activeAlerts.length > 0 && !sessionStorage.getItem('auto_alert_sent')) {
+      sessionStorage.setItem('auto_alert_sent', 'true');
+      const timer = setTimeout(() => {
+        simulateTelegramAlert();
+      }, 1500); // 1.5s delay for dramatic effect
+      return () => clearTimeout(timer);
+    }
+  }, [activeAlerts, simulateTelegramAlert]);
 
   const getTypeStyles = (type) => {
     switch (type) {
