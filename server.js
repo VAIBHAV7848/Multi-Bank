@@ -15,7 +15,7 @@ const CLIENT_SECRET = process.env.SETU_SECRET;
 
 // Telegram Bot & Gemini API config
 const TELEGRAM_BOT_TOKEN = '8386252338:AAFirFqVKJU47o75lhoWuWob5bSvT5m29KA';
-const GEMINI_API_KEY = 'AIzaSyBc6FFoQuB-95Q2usPMvT8CAXcZOufeCYM';
+const GEMINI_API_KEY = 'AIzaSyA7lCd7v5e7SMxsYXpnzsL9vRCMBJp9Zls';
 
 // Cache token in-memory
 let cachedToken = null;
@@ -368,7 +368,7 @@ app.post('/api/gemini/insights', async (req, res) => {
     }
 
     const geminiRes = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const GEMINI_API_KEY = 'AIzaSyBc6FFoQuB-95Q2usPMvT8CAXcZOufeCYM';
+const GEMINI_API_KEY = 'AIzaSyA7lCd7v5e7SMxsYXpnzsL9vRCMBJp9Zls';
 
 export default async function handler(req, res) {
   // CORS
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     }
 
     const geminiRes = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
