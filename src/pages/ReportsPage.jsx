@@ -22,6 +22,95 @@ export default function ReportsPage() {
     return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   };
 
+  const generatePDFHtml = () => {
+    const today = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+    const totalSpent = (transactions || []).filter(t => t.type==='debit').reduce((sum, t) => sum + Number(t.amount), 0).toLocaleString('en-IN', {style: 'currency', currency:'INR'});
+    const totalIncome = (transactions || []).filter(t => t.type==='credit').reduce((sum, t) => sum + Number(t.amount), 0).toLocaleString('en-IN', {style: 'currency', currency:'INR'});
+
+    const rows = (transactions || []).slice(0, 100).map(t => `
+      <tr>
+        <td>${new Date(t.date || t.created_at).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})}</td>
+        <td><strong>${t.merchant || t.merchant_name || 'Transfer'}</strong></td>
+        <td>${t.category || 'General'}</td>
+        <td class="${t.type === 'credit' ? 'credit' : 'debit'}">
+          ${t.type === 'credit' ? '+' : '-'}${Number(t.amount).toLocaleString('en-IN', {style:'currency', currency:'INR'})}
+        </td>
+      </tr>
+    `).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Finclario Statement - ${reportType}</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+          body { font-family: 'Inter', sans-serif; padding: 40px; color: #1e293b; background: #fff; margin:0; }
+          .header { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 20px; border-bottom: 2px solid #3b82f6; margin-bottom: 40px; }
+          .logo { font-size: 32px; font-weight: 800; color: #3b82f6; letter-spacing: -1px; margin: 0; }
+          .title-box { text-align: right; }
+          .title { font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 4px; text-transform: uppercase; letter-spacing: -0.5px; }
+          .subtitle { font-size: 14px; color: #64748b; font-weight: 600; }
+          .summary { display: flex; gap: 20px; margin-bottom: 40px; }
+          .card { flex: 1; padding: 24px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0; }
+          .card-label { font-size: 11px; text-transform: uppercase; font-weight: 800; color: #64748b; letter-spacing: 1.5px; margin-bottom: 8px; }
+          .card-value { font-size: 28px; font-weight: 800; color: #0f172a; letter-spacing: -1px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+          th { text-align: left; padding: 16px 20px; background: #f1f5f9; font-size: 12px; text-transform: uppercase; font-weight: 800; color: #475569; letter-spacing: 1px; border-bottom: 2px solid #e2e8f0; }
+          td { padding: 16px 20px; font-size: 14px; border-bottom: 1px solid #e2e8f0; color: #334155; }
+          .credit { color: #10b981; font-weight: 700; text-align: right; }
+          .debit { color: #0f172a; font-weight: 700; text-align: right; }
+          th:last-child { text-align: right; }
+          .footer { text-align: center; font-size: 12px; color: #94a3b8; padding-top: 24px; border-top: 1px solid #e2e8f0; font-weight: 600; }
+          @media print {
+            body { padding: 0; }
+            .card { border: 1px solid #cbd5e1; background: transparent; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1 class="logo">⚡ Finclario</h1>
+          <div class="title-box">
+            <div class="title">${reportType}</div>
+            <div class="subtitle">Generated on ${today}</div>
+          </div>
+        </div>
+        <div class="summary">
+          <div class="card">
+            <div class="card-label">Total Outflow</div>
+            <div class="card-value">${totalSpent}</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Total Inflow</div>
+            <div class="card-value">${totalIncome}</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Transactions</div>
+            <div class="card-value">${transactions ? transactions.length : 0}</div>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows || '<tr><td colspan="4" style="text-align:center; padding: 40px; color:#94a3b8;">No transactions found for this period.</td></tr>'}
+          </tbody>
+        </table>
+        <div class="footer">
+          This is an automatically generated financial statement by Finclario AI. Valid without physical signature.
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
   const handleDownload = (format) => {
     addToast(`Generating ${format} report...`, 'success');
     setTimeout(() => {
@@ -35,11 +124,26 @@ export default function ReportsPage() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        addToast(`${format} report downloaded successfully!`, 'success');
       } else if (format === 'PDF') {
-        // Native clean print dialog mapping to PDF
-        window.print();
+        // Create hidden iframe, inject gorgeous HTML, and trigger native PDF print popup
+        const printIframe = document.createElement('iframe');
+        printIframe.style.position = 'absolute';
+        printIframe.style.top = '-9999px';
+        document.body.appendChild(printIframe);
+        
+        const content = generatePDFHtml();
+        printIframe.contentWindow.document.open();
+        printIframe.contentWindow.document.write(content);
+        printIframe.contentWindow.document.close();
+        
+        setTimeout(() => {
+          printIframe.contentWindow.focus();
+          printIframe.contentWindow.print();
+          setTimeout(() => document.body.removeChild(printIframe), 2000);
+          addToast(`${format} report ready for save!`, 'success');
+        }, 500);
       }
-      addToast(`${format} report downloaded successfully!`, 'success');
     }, 1000);
   };
 
