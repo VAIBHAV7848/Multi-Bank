@@ -10,7 +10,12 @@ import {
   Settings as SettingsIcon,
   LogOut,
   Moon,
-  Sun
+  Sun,
+  Target,
+  BrainCircuit,
+  Landmark,
+  ShieldCheck,
+  FileText
 } from 'lucide-react';
 
 // Placeholders for screens
@@ -19,11 +24,21 @@ import TransactionsPage from './TransactionsPage';
 import AnalyticsPage from './AnalyticsPage';
 import AlertsPage from './AlertsPage';
 import SettingsPage from './SettingsPage';
+import GoalsPage from './GoalsPage';
+import AIInsightsPage from './AIInsightsPage';
+import SchemesPage from './SchemesPage';
+import CreditScorePage from './CreditScorePage';
+import ReportsPage from './ReportsPage';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight },
   { id: 'analytics', label: 'Analytics', icon: PieChart },
+  { id: 'goals', label: 'Goals', icon: Target },
+  { id: 'insights', label: 'AI Insights', icon: BrainCircuit },
+  { id: 'schemes', label: 'Loans & Schemes', icon: Landmark },
+  { id: 'credit', label: 'Credit Score', icon: ShieldCheck },
+  { id: 'reports', label: 'Reports', icon: FileText },
   { id: 'alerts', label: 'Alerts', icon: Bell },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
@@ -42,6 +57,11 @@ export default function AppShell() {
       case 'dashboard': return <DashboardPage />;
       case 'transactions': return <TransactionsPage />;
       case 'analytics': return <AnalyticsPage />;
+      case 'goals': return <GoalsPage />;
+      case 'insights': return <AIInsightsPage />;
+      case 'schemes': return <SchemesPage />;
+      case 'credit': return <CreditScorePage />;
+      case 'reports': return <ReportsPage />;
       case 'alerts': return <AlertsPage />;
       case 'settings': return <SettingsPage />;
       default: return <DashboardPage />;

@@ -7,6 +7,9 @@
   --color-white: #f8fafc;
 }
 
+@custom-variant dark (&:is(.dark *));
+@custom-variant dark-hover (&:is(.dark *):hover);
+
 @layer utilities {
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400;
