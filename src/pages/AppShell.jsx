@@ -284,8 +284,8 @@ export default function AppShell() {
       </main>
 
       {/* Bottom Tab Bar (Mobile) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-50 px-2 pb-safe pt-2 transition-colors">
-        <div className="flex justify-around items-center">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-50 pb-safe pt-2 transition-colors shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
+        <div className="flex overflow-x-auto gap-1 px-3 pb-2 scroll-smooth" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -294,17 +294,19 @@ export default function AppShell() {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col items-center justify-center w-full py-2 ${
-                  isActive ? 'text-blue-500' : 'text-slate-500 dark:text-slate-400'
+                className={`flex-shrink-0 flex flex-col items-center justify-center min-w-[72px] py-1.5 px-1 rounded-xl transition-all ${
+                  isActive ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
                 <div className="relative">
-                  <Icon className={`w-6 h-6 mb-1 ${isActive ? 'animate-bounce-short' : ''}`} />
+                  <Icon className={`w-6 h-6 mb-1 transition-transform ${isActive ? 'scale-110 drop-shadow-md' : ''}`} />
                   {item.id === 'alerts' && unreadAlerts > 0 && !isActive && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
                   )}
                 </div>
-                <span className="text-[10px] font-medium leading-none">{t(`nav.${item.id}`) || item.label}</span>
+                <span className={`text-[10px] font-bold leading-none ${isActive ? 'opacity-100' : 'opacity-80'}`}>
+                  {t(`nav.${item.id}`) || item.label}
+                </span>
               </button>
             );
           })}
