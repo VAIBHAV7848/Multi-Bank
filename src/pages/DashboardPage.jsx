@@ -50,29 +50,29 @@ export default function DashboardPage({ onNavigate }) {
       {/* Hero Section */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Total Net Worth Card */}
-        <div className="col-span-1 lg:col-span-2 relative overflow-hidden rounded-3xl bg-gradient-animated text-white p-8 shadow-2xl shadow-blue-900/20 group">
+        <div className="col-span-1 lg:col-span-2 relative overflow-hidden rounded-3xl bg-gradient-animated text-white p-5 md:p-8 shadow-2xl shadow-blue-900/20 group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-700"></div>
           
           <div className="relative z-10">
-            <p className="text-white/80 font-medium mb-2 flex items-center gap-2">
-              <Building2 className="w-5 h-5" /> Total Net Worth
+            <p className="text-white/80 font-medium mb-1.5 flex items-center gap-2 text-sm md:text-base">
+              <Building2 className="w-4 h-4 md:w-5 md:h-5" /> Total Net Worth
             </p>
-            <h2 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-8">
+            <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 md:mb-8">
               {formatCurrency(totalBalance)}
             </h2>
             
-            <div className="flex flex-wrap gap-4 md:gap-8">
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
-                <p className="text-white/70 text-sm font-medium flex items-center gap-1 mb-1">
-                  <ArrowUpRight className="w-4 h-4 text-mint" /> IN (This Month)
+            <div className="flex flex-wrap gap-3 md:gap-8">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 md:p-4 border border-white/20 flex-1 min-w-[140px]">
+                <p className="text-white/70 text-[10px] md:text-sm font-medium flex items-center gap-1 mb-1">
+                  <ArrowUpRight className="w-3 h-3 md:w-4 md:h-4 text-mint" /> IN (This Month)
                 </p>
-                <p className="text-xl font-bold">{formatCurrency(monthlyIncome)}</p>
+                <p className="text-lg md:text-xl font-bold">{formatCurrency(monthlyIncome)}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
-                <p className="text-white/70 text-sm font-medium flex items-center gap-1 mb-1">
-                  <ArrowDownRight className="w-4 h-4 text-red-400" /> OUT (This Month)
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 md:p-4 border border-white/20 flex-1 min-w-[140px]">
+                <p className="text-white/70 text-[10px] md:text-sm font-medium flex items-center gap-1 mb-1">
+                  <ArrowDownRight className="w-3 h-3 md:w-4 md:h-4 text-red-400" /> OUT (This Month)
                 </p>
-                <p className="text-xl font-bold">{formatCurrency(monthlySpent)}</p>
+                <p className="text-lg md:text-xl font-bold">{formatCurrency(monthlySpent)}</p>
               </div>
             </div>
           </div>

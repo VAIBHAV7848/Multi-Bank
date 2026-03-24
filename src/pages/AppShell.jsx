@@ -276,7 +276,7 @@ export default function AppShell() {
         </header>
 
         {/* Dynamic Page Content */}
-        <div className="flex-1 overflow-y-auto w-full p-4 md:p-8 scroll-smooth pb-24 md:pb-8">
+        <div className="flex-1 overflow-y-auto w-full p-3.5 md:p-8 scroll-smooth pb-24 md:pb-8">
           <div className="max-w-7xl mx-auto">
             {renderContent()}
           </div>

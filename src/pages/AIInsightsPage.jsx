@@ -152,18 +152,18 @@ Provide a helpful, concise response (under 150 words). Be specific to their fina
       </div>
 
       {/* Gemini AI Deep Analysis */}
-      <div className="rounded-2xl border border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20 p-6 space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="rounded-2xl border border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20 p-4 md:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center shadow-md shadow-purple-500/30">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center shadow-md shadow-purple-500/30 shrink-0">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-sm">Gemini AI Analysis</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Deep personalized insights powered by Google Gemini</p>
+              <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 leading-tight">Deep personalized insights powered by Google Gemini</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto">
             <button
               onClick={async () => {
                 const txns = [
@@ -177,7 +177,7 @@ Provide a helpful, concise response (under 150 words). Be specific to their fina
                 alert("Demo data synced! AI analysis will pop up now.");
                 window.location.reload();
               }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-purple-500/30 text-purple-600 dark:text-purple-400 font-bold text-sm hover:bg-purple-500/10 transition-all"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-purple-500/30 text-purple-600 dark:text-purple-400 font-bold text-xs md:text-sm hover:bg-purple-500/10 transition-all flex-1"
             >
               <Sparkles className="w-4 h-4" /> Quick Sync Demo Data
             </button>
@@ -190,7 +190,7 @@ Provide a helpful, concise response (under 150 words). Be specific to their fina
                 generateGeminiInsight();
               }}
               disabled={geminiLoading}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-700 text-white font-semibold text-sm transition-all shadow-md shadow-purple-500/20 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-700 text-white font-semibold text-xs md:text-sm transition-all shadow-md shadow-purple-500/20 disabled:opacity-60 flex-1"
             >
               {geminiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {geminiLoading ? 'Analyzing...' : 'Generate Insights'}

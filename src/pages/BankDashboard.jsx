@@ -498,40 +498,40 @@ export default function BankDashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         {/* Total Balance */}
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white relative overflow-hidden">
+        <div className="p-4 md:p-5 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white relative overflow-hidden shadow-lg shadow-blue-500/10">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
           <div className="relative z-10">
-            <div className="flex items-center gap-2 text-blue-200 mb-2">
-              <Wallet className="w-4 h-4" />
-              <span className="text-xs font-medium uppercase tracking-wider">Total Balance</span>
+            <div className="flex items-center gap-2 text-blue-100 mb-1.5 md:mb-2">
+              <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <span className="text-[10px] md:text-xs font-semibold uppercase tracking-wider">Total Balance</span>
             </div>
-            <p className="text-3xl font-extrabold tracking-tight">{formatINR(totalBalance)}</p>
-            <p className="text-xs text-blue-200 mt-1">{accounts.length} linked account{accounts.length !== 1 ? 's' : ''}</p>
+            <p className="text-2xl md:text-3xl font-extrabold tracking-tight">{formatINR(totalBalance)}</p>
+            <p className="text-[10px] md:text-xs text-blue-100/80 mt-1 font-medium">{accounts.length} linked account{accounts.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
 
         {/* Total Income */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2">
-            <TrendingUp className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase tracking-wider">Total Income</span>
+        <div className="p-4 md:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-1.5 md:mb-2">
+            <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            <span className="text-[10px] md:text-xs font-semibold uppercase tracking-wider">Total Income</span>
           </div>
-          <p className="text-2xl font-extrabold text-slate-900 dark:text-white">{formatINR(totalIncome)}</p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white">{formatINR(totalIncome)}</p>
+          <p className="text-[10px] md:text-xs text-slate-500 mt-1 font-medium">
             {filteredTxns.filter((t) => t.type === 'CREDIT').length} credit transactions
           </p>
         </div>
 
         {/* Total Spend */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-2 text-red-500 dark:text-red-400 mb-2">
-            <TrendingDown className="w-4 h-4" />
-            <span className="text-xs font-medium uppercase tracking-wider">Total Spend</span>
+        <div className="p-4 md:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-2 text-red-500 dark:text-red-400 mb-1.5 md:mb-2">
+            <TrendingDown className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            <span className="text-[10px] md:text-xs font-semibold uppercase tracking-wider">Total Spend</span>
           </div>
-          <p className="text-2xl font-extrabold text-slate-900 dark:text-white">{formatINR(totalSpend)}</p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white">{formatINR(totalSpend)}</p>
+          <p className="text-[10px] md:text-xs text-slate-500 mt-1 font-medium">
             {filteredTxns.filter((t) => t.type === 'DEBIT').length} debit transactions
           </p>
         </div>
