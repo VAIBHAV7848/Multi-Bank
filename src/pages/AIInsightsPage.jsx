@@ -160,20 +160,39 @@ Provide a helpful, concise response (under 150 words). Be specific to their fina
               <p className="text-xs text-slate-500 dark:text-slate-400">Deep personalized insights powered by Google Gemini</p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              if (!financialSummary) {
-                alert("Data not synced yet! Go to 'Bank AA' tab first to link your accounts via Setu Simulator.");
-                return;
-              }
-              generateGeminiInsight();
-            }}
-            disabled={geminiLoading}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-700 text-white font-semibold text-sm transition-all shadow-md shadow-purple-500/20 disabled:opacity-60"
-          >
-            {geminiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {geminiLoading ? 'Analyzing...' : 'Generate Insights'}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={async () => {
+                const txns = [
+                  { user_id: session?.user?.id, merchant_name: 'Amazon', amount: 12500, type: 'debit', category: 'Shopping', date: new Date().toISOString().split('T')[0] },
+                  { user_id: session?.user?.id, merchant_name: 'Zomato', amount: 850, type: 'debit', category: 'Food', date: new Date().toISOString().split('T')[0] },
+                  { user_id: session?.user?.id, merchant_name: 'Salary', amount: 120000, type: 'credit', category: 'Income', date: new Date().toISOString().split('T')[0] },
+                  { user_id: session?.user?.id, merchant_name: 'HDFC Home Loan', amount: 45000, type: 'debit', category: 'Bills', date: new Date().toISOString().split('T')[0] },
+                  { user_id: session?.user?.id, merchant_name: 'Uber', amount: 450, type: 'debit', category: 'Transport', date: new Date().toISOString().split('T')[0] }
+                ];
+                await supabase.from('transactions').insert(txns);
+                alert("Demo data synced! AI analysis will pop up now.");
+                window.location.reload();
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-purple-500/30 text-purple-600 dark:text-purple-400 font-bold text-sm hover:bg-purple-500/10 transition-all"
+            >
+              <Sparkles className="w-4 h-4" /> Quick Sync Demo Data
+            </button>
+            <button
+              onClick={() => {
+                if (!financialSummary) {
+                  alert("Data not synced yet! Hit 'Quick Sync Demo Data' or link banks in 'Bank AA' first.");
+                  return;
+                }
+                generateGeminiInsight();
+              }}
+              disabled={geminiLoading}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-700 text-white font-semibold text-sm transition-all shadow-md shadow-purple-500/20 disabled:opacity-60"
+            >
+              {geminiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {geminiLoading ? 'Analyzing...' : 'Generate Insights'}
+            </button>
+          </div>
         </div>
 
         {geminiInsight && (
