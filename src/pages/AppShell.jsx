@@ -69,7 +69,7 @@ export default function AppShell() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardPage />;
+      case 'dashboard': return <DashboardPage onNavigate={setActiveTab} />;
       case 'transactions': return <TransactionsPage />;
       case 'analytics': return <AnalyticsPage />;
       case 'goals': return <GoalsPage />;

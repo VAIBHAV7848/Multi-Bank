@@ -6,13 +6,23 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Helper to load profile
+  const fetchProfile = async (userId) => {
+    try {
+      const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      setProfile(data || null);
+    } catch(e) { console.error('Error fetching profile', e); }
+  };
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user?.id) fetchProfile(session.user.id);
       setLoading(false);
     }).catch((err) => {
       console.error("Supabase getSession error:", err);
@@ -23,6 +33,11 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user?.id) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
       setLoading(false);
     });
 
@@ -32,6 +47,7 @@ export function AuthProvider({ children }) {
   const value = {
     session,
     user,
+    profile,
     loading,
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
     signUp: (email, password) => supabase.auth.signUp({ email, password }),
@@ -40,8 +56,8 @@ export function AuthProvider({ children }) {
       options: { redirectTo: window.location.origin }
     }),
     signOut: () => {
-      // Clear specific front-end state if needed, but primary is Supabase
       localStorage.removeItem('setupComplete');
+      setProfile(null);
       return supabase.auth.signOut();
     },
   };

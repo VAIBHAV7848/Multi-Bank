@@ -8,7 +8,7 @@ import LoginPage from './pages/LoginPage';
 import SetupPage from './pages/SetupPage';
 
 function ProtectedRoute({ children }) {
-  const { session, loading } = useAuth();
+  const { session, profile, loading } = useAuth();
 
   if (loading) {
     return (
@@ -22,8 +22,9 @@ function ProtectedRoute({ children }) {
     return <LoginPage />;
   }
 
-  // Check if setup is needed (mock implementation for now)
-  const isSetupComplete = localStorage.getItem('setupComplete') === 'true';
+  // Check if setup is needed via Supabase Profile (or fallback to local storage if profile hasn't loaded immediately)
+  const isSetupComplete = profile?.setup_complete === true || localStorage.getItem('setupComplete') === 'true';
+  
   if (!isSetupComplete) {
     return <SetupPage onComplete={() => window.location.reload()} />;
   }

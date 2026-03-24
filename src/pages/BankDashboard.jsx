@@ -21,6 +21,9 @@ import {
   BarChart3,
   AlertCircle,
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 // Uses relative paths — works on both localhost (via Vite proxy) and Vercel deployment
 const API_BASE = '';
@@ -66,6 +69,8 @@ function StatusBadge({ status }) {
 }
 
 export default function BankDashboard() {
+  const { user } = useAuth();
+  const { addToast } = useToast();
   // State
   const [consentId, setConsentId] = useState(null);
   const [consentStatus, setConsentStatus] = useState(null);
@@ -154,6 +159,54 @@ export default function BankDashboard() {
       const data = await res.json();
 
       if (data.success) {
+        
+        // --- SYNC WITH SUPABASE ---
+        if (user && data.accounts?.length > 0) {
+          try {
+            // 1. Clear old AA data for clean refresh (for hackathon demo simplicity)
+            await supabase.from('transactions').delete().eq('user_id', user.id);
+            await supabase.from('accounts').delete().eq('user_id', user.id);
+
+            // 2. Insert new accounts
+            const dbAccounts = data.accounts.map(acc => ({
+              user_id: user.id,
+              bank_name: acc.bankName,
+              account_name: acc.type,
+              account_type: acc.type,
+              masked_number: acc.maskedAccNumber,
+              balance: acc.balance,
+              is_aa_linked: true,
+              color: acc.bankName.includes('HDFC') ? 'bg-blue-600' : acc.bankName.includes('ICICI') ? 'bg-orange-500' : 'bg-indigo-500'
+            }));
+            const { data: insertedAccounts, error: accError } = await supabase.from('accounts').insert(dbAccounts).select();
+            if (accError) throw accError;
+
+            // 3. Map transactions to inserted account IDs and insert
+            if (data.transactions?.length > 0 && insertedAccounts) {
+              const dbTxns = data.transactions.map(txn => {
+                const accMatch = insertedAccounts.find(a => a.bank_name === txn.bankName);
+                return {
+                  user_id: user.id,
+                  account_id: accMatch ? accMatch.id : insertedAccounts[0].id,
+                  merchant_name: txn.description || 'Unknown',
+                  amount: txn.amount,
+                  type: txn.type.toLowerCase(),
+                  category: txn.category || 'Uncategorized',
+                  date: txn.date.split('T')[0],
+                  status: 'completed'
+                };
+              });
+              const { error: txError } = await supabase.from('transactions').insert(dbTxns);
+              if (txError) throw txError;
+            }
+            addToast('Bank data synced globally!', 'success');
+          } catch (syncErr) {
+            console.error('Supabase Sync Error:', syncErr);
+            addToast('Failed to sync to global dashboard', 'error');
+          }
+        }
+        // --------------------------
+
         setAccounts(data.accounts || []);
         setTransactions(data.transactions || []);
         setLinkingStep(null);

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 import { supabase } from '../lib/supabase';
+import { seedInitialData } from '../lib/seedData';
 import { formatCurrency } from '../lib/formatters';
 import { Card, PageTransition } from '../components/ui';
 import { Building2, CheckCircle2, Loader2, ArrowRight, ShieldCheck, Lock, UserCheck, FileCheck } from 'lucide-react';
@@ -20,6 +21,10 @@ export default function SetupPage({ onComplete }) {
     if (!user) return;
     
     try {
+      // 1. Ensure user has mock data seeded in the new database tables
+      await seedInitialData(user.id);
+
+      // 2. Fetch the newly seeded accounts
       const { data, error } = await supabase
         .from('accounts')
         .select('*')
@@ -50,13 +55,16 @@ export default function SetupPage({ onComplete }) {
     );
   };
 
-  const finishSetup = () => {
+  const finishSetup = async () => {
     if (connectedIds.length === 0) {
       addToast('Please connect at least one bank account', 'warning');
       return;
     }
-    localStorage.setItem('connectedBanks', JSON.stringify(connectedIds));
-    localStorage.setItem('setupComplete', 'true');
+    
+    // Update the database profile so setup is permanently complete across devices
+    await supabase.from('profiles').update({ setup_complete: true }).eq('id', user.id);
+    localStorage.setItem('setupComplete', 'true'); // Fallback local logic
+    
     addToast('Workspace ready!', 'success');
     onComplete();
   };
