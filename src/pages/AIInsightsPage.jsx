@@ -159,7 +159,13 @@ Provide a helpful, concise response (under 150 words). Be specific to their fina
             </div>
           </div>
           <button
-            onClick={generateGeminiInsight}
+            onClick={() => {
+              if (!financialSummary) {
+                alert("Data not synced yet! Go to 'Bank AA' tab first to link your accounts via Setu Simulator.");
+                return;
+              }
+              generateGeminiInsight();
+            }}
             disabled={geminiLoading}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-700 text-white font-semibold text-sm transition-all shadow-md shadow-purple-500/20 disabled:opacity-60"
           >
@@ -226,7 +232,13 @@ Provide a helpful, concise response (under 150 words). Be specific to their fina
                 className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               />
               <button
-                onClick={sendChatMessage}
+                onClick={() => {
+                  if (!financialSummary) {
+                    alert("I need your financial data to help! Please link your banks in 'Bank AA' first.");
+                    return;
+                  }
+                  sendChatMessage();
+                }}
                 className="px-3 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors"
               >
                 <Send className="w-4 h-4" />
