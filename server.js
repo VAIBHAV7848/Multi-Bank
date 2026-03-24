@@ -387,8 +387,9 @@ app.post('/api/gemini/insights', async (req, res) => {
     console.warn('Gemini API Blocked (Leaked Key). Syncing high-fidelity local models for demo...');
     
     // SMART FALLBACK
-    const totalSpent = req.body?.prompt?.match(/Total Spent: ₹([\d,]+)/)?.[1] || '12,500';
-    const totalIncome = req.body?.prompt?.match(/Total Income: ₹([\d,]+)/)?.[1] || '1,20,000';
+    const promptStr = req.body?.prompt || '';
+    const totalSpent = promptStr.match(/Total Spent: ₹([\d,]+)/)?.[1] || '12,500';
+    const totalIncome = promptStr.match(/Total Income: ₹([\d,]+)/)?.[1] || '1,20,000';
     
     return res.json({ 
       success: true, 

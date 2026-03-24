@@ -4,10 +4,13 @@ import { BrainCircuit, TrendingDown, CheckCircle2, AlertTriangle, Info, Loader2,
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { formatCurrency } from '../lib/formatters';
 import { useSupabaseData } from '../hooks/useSupabaseData';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const API_BASE = '';
 
 export default function AIInsightsPage() {
+  const { session } = useAuth();
   const { transactions, accounts, loading } = useSupabaseData();
   const [geminiInsight, setGeminiInsight] = useState(null);
   const [geminiLoading, setGeminiLoading] = useState(false);

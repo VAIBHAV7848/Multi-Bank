@@ -38,10 +38,10 @@ export default async function handler(req, res) {
   } catch (err) {
     console.warn('CRITICAL: Gemini API Key blocked/leaked. Falling back to Intelligent Simulation for demo safety.');
     
-    // SMART FALLBACK: Parse the prompt to find real numbers and generate 'fake' but accurate insights
-    const totalSpent = prompt.match(/Total Spent: ₹([\d,]+)/)?.[1] || '0';
-    const totalIncome = prompt.match(/Total Income: ₹([\d,]+)/)?.[1] || '0';
-    const savingsRate = prompt.match(/Savings Rate: (\d+)%/)?.[1] || '0';
+    const promptStr = req.body?.prompt || '';
+    const totalSpent = promptStr.match(/Total Spent: ₹([\d,]+)/)?.[1] || '0';
+    const totalIncome = promptStr.match(/Total Income: ₹([\d,]+)/)?.[1] || '0';
+    const savingsRate = promptStr.match(/Savings Rate: (\d+)%/)?.[1] || '0';
     
     const insights = [
       `💰 Your savings rate of ${savingsRate}% is solid. Based on your income of ₹${totalIncome}, you could invest ₹5,000 more in mutual funds.`,
