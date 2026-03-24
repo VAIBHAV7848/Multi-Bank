@@ -120,7 +120,7 @@ export default function DashboardPage({ onNavigate }) {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white leading-tight">{account.bank_name}</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                      •••• {account.account_number.split('-')[1]}
+                      •••• {(account.masked_number || account.account_number || '0000').split('-').pop()}
                     </p>
                   </div>
                 </div>

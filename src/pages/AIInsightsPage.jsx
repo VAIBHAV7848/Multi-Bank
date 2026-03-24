@@ -1,15 +1,22 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Card } from '../components/ui';
-import { BrainCircuit, TrendingDown, CheckCircle2, AlertTriangle, Info, Loader2 } from 'lucide-react';
+import { BrainCircuit, TrendingDown, CheckCircle2, AlertTriangle, Info, Loader2, Sparkles, MessageSquare, Send, ChevronRight } from 'lucide-react';
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { formatCurrency } from '../lib/formatters';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 
-export default function AIInsightsPage() {
-  const { transactions, loading } = useSupabaseData();
+const API_BASE = '';
 
-  const { predictData, categoryRadar, insights } = useMemo(() => {
-    if (!transactions.length) return { predictData: [], categoryRadar: [], insights: [] };
+export default function AIInsightsPage() {
+  const { transactions, accounts, loading } = useSupabaseData();
+  const [geminiInsight, setGeminiInsight] = useState(null);
+  const [geminiLoading, setGeminiLoading] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [showChat, setShowChat] = useState(false);
+
+  const { predictData, categoryRadar, insights, financialSummary } = useMemo(() => {
+    if (!transactions.length) return { predictData: [], categoryRadar: [], insights: [], financialSummary: '' };
 
     // Build monthly spending for prediction chart
     const monthMap = {};
@@ -28,7 +35,6 @@ export default function AIInsightsPage() {
     });
 
     const sorted = Object.values(monthMap).slice(-3);
-    // Add 2 predicted months
     const avg = sorted.reduce((s, m) => s + m.actual, 0) / (sorted.length || 1);
     const nextMonths = [
       new Date(now.getFullYear(), now.getMonth() + 1),
@@ -67,8 +73,67 @@ export default function AIInsightsPage() {
       if (bigTxn) ins.push({ id: 4, type: 'info', icon: <AlertTriangle className="w-5 h-5 text-amber-500" />, text: <>Largest single transaction: <strong>{formatCurrency(bigTxn.amount)}</strong> at {bigTxn.merchant || bigTxn.merchant_name}.</>, tag: 'Spotlight' });
     }
 
-    return { predictData: sorted, categoryRadar: radar, insights: ins };
-  }, [transactions]);
+    // Build financial summary for Gemini context
+    const catSummary = Object.entries(catMap).sort((a,b) => b[1]-a[1]).slice(0, 5).map(([c,a]) => `${c}: ₹${a.toLocaleString('en-IN')}`).join(', ');
+    const summary = `Total Income: ₹${totalIncome.toLocaleString('en-IN')}, Total Spent: ₹${totalSpent.toLocaleString('en-IN')}, Savings Rate: ${savingsRate}%, Top categories: ${catSummary}, Number of accounts: ${accounts.length}, Transaction count: ${transactions.length}`;
+
+    return { predictData: sorted, categoryRadar: radar, insights: ins, financialSummary: summary };
+  }, [transactions, accounts]);
+
+  // Generate Gemini AI deep insight
+  const generateGeminiInsight = useCallback(async () => {
+    if (!financialSummary) return;
+    setGeminiLoading(true);
+    setGeminiInsight(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/gemini/insights`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `You are a personal finance advisor AI for the Finclario app. Based on this user's financial data, provide 3-4 personalized, actionable financial insights. Be specific, use numbers, and be encouraging but honest. Keep it concise (under 200 words).
+
+User's financial data: ${financialSummary}
+
+Format your response as bullet points starting with emojis. Focus on: saving tips, spending patterns, budget recommendations, and investment suggestions for Indian users.`
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGeminiInsight(data.insight);
+      } else {
+        setGeminiInsight('Unable to generate insights. Please try again.');
+      }
+    } catch {
+      setGeminiInsight('Error connecting to AI service. Make sure the backend server is running.');
+    }
+    setGeminiLoading(false);
+  }, [financialSummary]);
+
+  // Gemini Chat
+  const sendChatMessage = useCallback(async () => {
+    if (!chatInput.trim()) return;
+    const userMsg = chatInput.trim();
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/gemini/insights`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `You are Finclario AI, a friendly Indian personal finance assistant. The user's financial snapshot: ${financialSummary}
+
+User's question: ${userMsg}
+
+Provide a helpful, concise response (under 150 words). Be specific to their financial data when relevant. Use INR (₹) for amounts.`
+        }),
+      });
+      const data = await res.json();
+      setChatMessages(prev => [...prev, { role: 'ai', text: data.success ? data.insight : 'Sorry, I could not process that. Try again!' }]);
+    } catch {
+      setChatMessages(prev => [...prev, { role: 'ai', text: 'Error connecting to AI. Is the backend running?' }]);
+    }
+  }, [chatInput, financialSummary]);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-purple-500" /></div>;
 
@@ -78,8 +143,98 @@ export default function AIInsightsPage() {
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <BrainCircuit className="w-6 h-6 text-purple-500" /> AI Financial Insights
         </h2>
-        <p className="text-slate-500 dark:text-slate-400">Intelligence derived from your real spending data</p>
+        <p className="text-slate-500 dark:text-slate-400">Intelligence derived from your real spending data • Powered by Gemini AI</p>
       </div>
+
+      {/* Gemini AI Deep Analysis */}
+      <div className="rounded-2xl border border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20 p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center shadow-md shadow-purple-500/30">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-sm">Gemini AI Analysis</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Deep personalized insights powered by Google Gemini</p>
+            </div>
+          </div>
+          <button
+            onClick={generateGeminiInsight}
+            disabled={geminiLoading}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-700 text-white font-semibold text-sm transition-all shadow-md shadow-purple-500/20 disabled:opacity-60"
+          >
+            {geminiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {geminiLoading ? 'Analyzing...' : 'Generate Insights'}
+          </button>
+        </div>
+
+        {geminiInsight && (
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-purple-100 dark:border-purple-900 animate-slide-up">
+            <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300">
+              {geminiInsight}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* AI Chat */}
+      <Card className="overflow-hidden">
+        <button 
+          onClick={() => setShowChat(!showChat)}
+          className="w-full flex items-center justify-between p-0 hover:opacity-90 transition-opacity"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="text-left">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Ask Finclario AI</h3>
+              <p className="text-xs text-slate-500">Chat with AI about your finances</p>
+            </div>
+          </div>
+          <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${showChat ? 'rotate-90' : ''}`} />
+        </button>
+
+        {showChat && (
+          <div className="mt-4 space-y-3 animate-slide-up">
+            {/* Chat messages */}
+            <div className="max-h-64 overflow-y-auto space-y-2 scroll-smooth">
+              {chatMessages.length === 0 && (
+                <p className="text-xs text-slate-400 text-center py-4">Ask anything about your finances — "How can I save more?", "Where am I overspending?"</p>
+              )}
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm whitespace-pre-line ${
+                    msg.role === 'user'
+                      ? 'bg-blue-500 text-white rounded-br-md'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-bl-md'
+                  }`}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Input */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendChatMessage()}
+                placeholder="Ask about your finances..."
+                className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              />
+              <button
+                onClick={sendChatMessage}
+                className="px-3 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="h-80 flex flex-col">

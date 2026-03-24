@@ -12,7 +12,7 @@ export function AuthProvider({ children }) {
   // Helper to load profile
   const fetchProfile = async (userId) => {
     try {
-      const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
       setProfile(data || null);
     } catch(e) { console.error('Error fetching profile', e); }
   };

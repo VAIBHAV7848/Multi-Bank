@@ -13,6 +13,10 @@ const SETU_BASE = process.env.SETU_BASE_URL || 'https://fiu-uat.setu.co';
 const CLIENT_ID = process.env.SETU_CLIENT_ID;
 const CLIENT_SECRET = process.env.SETU_SECRET;
 
+// Telegram Bot & Gemini API config
+const TELEGRAM_BOT_TOKEN = '8386252338:AAFirFqVKJU47o75lhoWuWob5bSvT5m29KA';
+const GEMINI_API_KEY = 'AIzaSyBc6FFoQuB-95Q2usPMvT8CAXcZOufeCYM';
+
 // Cache token in-memory
 let cachedToken = null;
 let tokenExpiry = 0;
@@ -127,13 +131,17 @@ app.post('/api/consent', async (req, res) => {
 });
 
 /**
- * GET /api/status/:consentId
- * Check consent status
+ * GET /api/status or /api/status/:consentId
+ * Check consent status (supports both query param and path param)
  */
-app.get('/api/status/:consentId', async (req, res) => {
+app.get('/api/status/:consentId?', async (req, res) => {
   try {
     const token = await getSetuToken();
-    const { consentId } = req.params;
+    const consentId = req.params.consentId || req.query.consentId;
+    
+    if (!consentId) {
+      return res.status(400).json({ success: false, error: 'consentId is required' });
+    }
 
     const statusRes = await axios.get(
       `${SETU_BASE}/api/v2/consents/${consentId}`,
@@ -161,13 +169,13 @@ app.get('/api/status/:consentId', async (req, res) => {
 });
 
 /**
- * GET /api/transactions/:consentId
- * Fetch FI data for an approved consent
+ * GET /api/transactions or /api/transactions/:consentId
+ * Fetch FI data for an approved consent (supports both query param and path param)
  */
-app.get('/api/transactions/:consentId', async (req, res) => {
+app.get('/api/transactions/:consentId?', async (req, res) => {
   try {
     const token = await getSetuToken();
-    const { consentId } = req.params;
+    const consentId = req.params.consentId || req.query.consentId;
 
     // Step 1: Create a data session
     const sessionRes = await axios.post(
@@ -287,6 +295,99 @@ app.get('/api/transactions/:consentId', async (req, res) => {
     res.status(500).json({
       success: false,
       error: err.response?.data?.errorMsg || err.message,
+    });
+  }
+});
+
+/**
+ * POST /api/telegram/send
+ * Send alert notification via Telegram Bot
+ */
+app.post('/api/telegram/send', async (req, res) => {
+  try {
+    const { chatId, message } = req.body;
+    if (!chatId || !message) {
+      return res.status(400).json({ success: false, error: 'chatId and message are required' });
+    }
+
+    const telegramRes = await axios.post(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML',
+      }
+    );
+
+    res.json({ success: true, result: telegramRes.data.result });
+  } catch (err) {
+    console.error('❌ Telegram send error:', err.response?.data || err.message);
+    res.status(500).json({
+      success: false,
+      error: err.response?.data?.description || err.message,
+    });
+  }
+});
+
+/**
+ * GET /api/telegram/updates
+ * Get recent messages to find user's chat ID
+ */
+app.get('/api/telegram/updates', async (req, res) => {
+  try {
+    const telegramRes = await axios.get(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=-10`
+    );
+    
+    const chats = (telegramRes.data.result || []).map(u => ({
+      chatId: u.message?.chat?.id || u.message?.from?.id,
+      username: u.message?.from?.username,
+      firstName: u.message?.from?.first_name,
+      text: u.message?.text,
+    })).filter(c => c.chatId);
+
+    // De-duplicate by chatId
+    const unique = [...new Map(chats.map(c => [c.chatId, c])).values()];
+
+    res.json({ success: true, chats: unique });
+  } catch (err) {
+    console.error('❌ Telegram updates error:', err.response?.data || err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/gemini/insights
+ * Generate AI financial insights using Gemini API
+ */
+app.post('/api/gemini/insights', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ success: false, error: 'prompt is required' });
+    }
+
+    const geminiRes = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024,
+        }
+      },
+      {
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+
+    const text = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No insights available.';
+    res.json({ success: true, insight: text });
+  } catch (err) {
+    console.error('❌ Gemini API error:', err.response?.data || err.message);
+    res.status(500).json({
+      success: false,
+      error: err.response?.data?.error?.message || err.message,
     });
   }
 });
