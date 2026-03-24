@@ -11,9 +11,9 @@ export default function AlertsPage() {
   });
 
   // Derived data
-  const connectedBankIds = JSON.parse(localStorage.getItem('connectedBanks') || '[]');
-  const activeAccounts = accounts.filter(a => connectedBankIds.includes(a.id));
-  const activeTransactions = transactions.filter(t => connectedBankIds.includes(t.account_id));
+  // Derived data
+  const activeAccounts = accounts;
+  const activeTransactions = transactions;
 
   // Generate Alerts based on real data
   const alerts = useMemo(() => {

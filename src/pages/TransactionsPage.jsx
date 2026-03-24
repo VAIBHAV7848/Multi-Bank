@@ -18,8 +18,8 @@ export default function TransactionsPage() {
   const itemsPerPage = 15;
 
   // Derived data
-  const connectedBankIds = JSON.parse(localStorage.getItem('connectedBanks') || '[]');
-  const activeTransactions = transactions.filter(t => connectedBankIds.includes(t.account_id));
+  const activeTransactions = transactions;
+  const activeAccounts = accounts;
   
   // Default available categories from data
   const availableCategories = useMemo(() => {
@@ -134,7 +134,7 @@ export default function TransactionsPage() {
               className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 pl-9 pr-8 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-medium text-sm"
             >
               <option value="all">All Banks</option>
-              {accounts.filter(a => connectedBankIds.includes(a.id)).map(acc => (
+              {activeAccounts.map(acc => (
                 <option key={acc.id} value={acc.id}>{acc.bank_name}</option>
               ))}
             </select>

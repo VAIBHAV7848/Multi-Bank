@@ -14,8 +14,7 @@ export default function AnalyticsPage() {
   const { transactions, loading } = useSupabaseData();
 
   // Derived data
-  const connectedBankIds = JSON.parse(localStorage.getItem('connectedBanks') || '[]');
-  const activeTransactions = transactions.filter(t => connectedBankIds.includes(t.account_id));
+  const activeTransactions = transactions;
 
   // --- Data Processing for Charts ---
 

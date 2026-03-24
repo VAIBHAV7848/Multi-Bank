@@ -12,11 +12,8 @@ export default function DashboardPage() {
   const [showSetuAA, setShowSetuAA] = useState(false);
 
   // Get connected banks from localStorage
-  const connectedBankIds = JSON.parse(localStorage.getItem('connectedBanks') || '[]');
-  
-  // Filter data for connected banks only
-  const activeAccounts = accounts.filter(a => connectedBankIds.includes(a.id));
-  const activeTransactions = transactions.filter(t => connectedBankIds.includes(t.account_id));
+  const activeAccounts = accounts;
+  const activeTransactions = transactions;
   
   const totalBalance = activeAccounts.reduce((sum, acc) => sum + (Number(acc.balance) || 0), 0);
   
