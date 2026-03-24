@@ -29,6 +29,7 @@ import AIInsightsPage from './AIInsightsPage';
 import SchemesPage from './SchemesPage';
 import CreditScorePage from './CreditScorePage';
 import ReportsPage from './ReportsPage';
+import LiveSimulator from '../components/LiveSimulator';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -211,6 +212,7 @@ export default function AppShell() {
         </div>
       </nav>
       
+      <LiveSimulator />
     </div>
   );
 }
