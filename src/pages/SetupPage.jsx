@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
-import { seedDatabase } from '../lib/seedData';
+import { seedInitialData } from '../lib/seedData';
+import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/formatters';
 import { Card, PageTransition } from '../components/ui';
 import { Building2, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
@@ -21,25 +22,28 @@ export default function SetupPage({ onComplete }) {
       
       try {
         setStep('loading');
-        
         // Ensure data exists
-        const { success } = await seedDatabase(user.id);
-        if (success) {
-          // Fetch the created accounts to show available banks
-          const data = JSON.parse(localStorage.getItem('mockAccounts') || '[]');
+        await seedInitialData(user.id);
+        
+        // Fetch the created accounts to show available banks
+        const { data, error } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('user_id', user.id);
           
-          setAccounts(data);
-          
-          // Pre-connect 3 random accounts for demo
-          if (data && data.length > 0) {
-            const shuffled = [...data].sort(() => 0.5 - Math.random());
-            setConnectedIds(shuffled.slice(0, 3).map(a => a.id));
-          }
-          
-          setTimeout(() => {
-            setStep('linking');
-          }, 1500); // Artificial delay to show the nice loading screen
+        if (error) throw error;
+        
+        setAccounts(data || []);
+        
+        // Pre-connect 3 random accounts for demo
+        if (data && data.length > 0) {
+          const shuffled = [...data].sort(() => 0.5 - Math.random());
+          setConnectedIds(shuffled.slice(0, 3).map(a => a.id));
         }
+        
+        setTimeout(() => {
+          setStep('linking');
+        }, 1500); // Artificial delay to show the nice loading screen
       } catch (error) {
         addToast(error.message || 'Setup failed', 'error');
       }

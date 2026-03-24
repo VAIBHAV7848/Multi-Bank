@@ -1,68 +1,85 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 export function useSupabaseData() {
   const { session } = useAuth();
   const { addToast } = useToast();
-  
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [lastSynced, setLastSynced] = useState(new Date());
-
-  const fetchData = useCallback(async (showToast = false) => {
-    if (!session?.user?.id) return;
-    
-    try {
-      setLoading(true);
-      
-      // Simulate network request
-      await new Promise(r => setTimeout(r, 600));
-
-      const accountsData = JSON.parse(localStorage.getItem('mockAccounts') || '[]');
-      let txData = JSON.parse(localStorage.getItem('mockTransactions') || '[]');
-      
-      // Join transactions with account details (like Supabase foreign keys)
-      txData = txData.map(t => {
-        const acc = accountsData.find(a => a.id === t.account_id);
-        return {
-          ...t,
-          accounts: acc ? { bank_name: acc.bank_name, color: acc.color } : null
-        };
-      });
-      
-      setAccounts(accountsData);
-      setTransactions(txData);
-      setLastSynced(new Date());
-      
-      if (showToast) {
-        addToast('Data synced successfully', 'success');
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      addToast(error.message || 'Failed to fetch data', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [session, addToast]);
+  const [error, setError] = useState(null);
+  const [lastSynced, setLastSynced] = useState(null);
 
   useEffect(() => {
-    fetchData();
-    
-    // Auto-refresh every 60s
-    const interval = setInterval(() => {
-      fetchData();
-    }, 60000);
-    
-    return () => clearInterval(interval);
-  }, [fetchData]);
+    if (!session?.user?.id) {
+      setLoading(false);
+      return;
+    }
 
-  return {
-    accounts,
-    transactions,
-    loading,
-    lastSynced,
-    refetch: () => fetchData(true)
-  };
+    async function fetchData() {
+      try {
+        setLoading(true);
+        const userId = session.user.id;
+
+        // Fetch accounts
+        const { data: accountsData, error: accountsError } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (accountsError) throw accountsError;
+
+        // Fetch transactions
+        const { data: transactionsData, error: transactionsError } = await supabase
+          .from('transactions')
+          .select(`
+            *,
+            accounts (
+              bank_name,
+              account_type,
+              color
+            )
+          `)
+          .eq('user_id', userId)
+          .order('date', { ascending: false })
+          .limit(100);
+
+        if (transactionsError) throw transactionsError;
+
+        setAccounts(accountsData || []);
+        setTransactions(transactionsData || []);
+        setLastSynced(new Date());
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError(err.message);
+        addToast('Failed to sync data with server', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+
+    // Set up realtime subscriptions
+    const accountsSub = supabase
+      .channel('accounts_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'accounts', filter: `user_id=eq.${session.user.id}` }, fetchData)
+      .subscribe();
+
+    const transactionsSub = supabase
+      .channel('transactions_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${session.user.id}` }, fetchData)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(accountsSub);
+      supabase.removeChannel(transactionsSub);
+    };
+  }, [session?.user?.id, addToast]);
+
+  return { accounts, transactions, loading, error, lastSynced, refetch: () => setLastSynced(new Date(0)) }; // trigger refetch by changing something if needed, but here's just basic return
 }
