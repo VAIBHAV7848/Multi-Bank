@@ -6,8 +6,9 @@ import { useSupabaseData } from '../hooks/useSupabaseData';
 
 export default function ReportsPage() {
   const { addToast } = useToast();
-  const { transactions } = useSupabaseData();
+  const { accounts, transactions } = useSupabaseData();
   const [reportType, setReportType] = useState('Income & Expense Summary');
+  const [dateRange, setDateRange] = useState('This Month');
 
   const generateCSV = () => {
     if (!transactions || transactions.length === 0) return 'No data available';
@@ -183,10 +184,24 @@ export default function ReportsPage() {
             <div>
               <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 block">Date Range</label>
               <div className="grid grid-cols-2 gap-3">
-                <button className="flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:border-blue-500 transition-colors">
+                <button 
+                  onClick={() => setDateRange('This Month')}
+                  className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm transition-colors ${
+                    dateRange === 'This Month' 
+                      ? 'bg-slate-50 dark:bg-slate-900 border border-blue-500 dark:border-blue-500 ring-1 ring-blue-500 text-blue-600 dark:text-blue-400' 
+                      : 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-blue-500'
+                  }`}
+                >
                   <Calendar className="w-4 h-4" /> This Month
                 </button>
-                <button className="flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-900 border border-blue-500 dark:border-blue-500 ring-1 ring-blue-500 rounded-lg py-2.5 text-sm text-blue-600 dark:text-blue-400 transition-colors">
+                <button 
+                  onClick={() => setDateRange('Last 3 Months')}
+                  className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm transition-colors ${
+                    dateRange === 'Last 3 Months' 
+                      ? 'bg-slate-50 dark:bg-slate-900 border border-blue-500 dark:border-blue-500 ring-1 ring-blue-500 text-blue-600 dark:text-blue-400' 
+                      : 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-blue-500'
+                  }`}
+                >
                   <Calendar className="w-4 h-4" /> Last 3 Months
                 </button>
               </div>
@@ -210,7 +225,7 @@ export default function ReportsPage() {
             
             <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{reportType}</h3>
             <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-sm">
-              Your report is ready to be generated. It will include data from 4 accounts covering the last 3 months.
+              Your report is ready to be generated. It will include data from {accounts?.length || 'all'} connected accounts covering {dateRange.toLowerCase()}.
             </p>
             
             <div className="flex flex-wrap justify-center gap-4 w-full px-4">
