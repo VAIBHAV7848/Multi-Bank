@@ -8,23 +8,15 @@
 }
 
 @layer utilities {
-  .glass {
-    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border border-white/20 dark:border-slate-800/50 shadow-xl;
-  }
-  
-  .glass-card {
-    @apply glass rounded-2xl p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1;
-  }
-
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400;
   }
-  
-  .bg-gradient-animated {
-    background: linear-gradient(-45deg, #0f172a, #1e3a8a, #3730a3, #0f172a);
-    background-size: 400% 400%;
-    animation: gradient 15s ease infinite;
-  }
+}
+
+.bg-gradient-animated {
+  background: linear-gradient(-45deg, #0f172a, #1e3a8a, #3730a3, #0f172a);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
 }
 
 @keyframes gradient {
