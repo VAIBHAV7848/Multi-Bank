@@ -50,7 +50,7 @@ const NAV_ITEMS = [
 
 export default function AppShell() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const { lastSynced } = useSupabaseData();
   const { t, language, changeLanguage, languages, currentLanguage } = useLanguage();
@@ -129,12 +129,12 @@ export default function AppShell() {
 
         <div className="p-4 border-t border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-sm">
-              {user?.email?.charAt(0).toUpperCase() || 'U'}
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-sm uppercase">
+              {(profile?.display_name || user?.email || 'U').charAt(0)}
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-semibold truncate dark:text-slate-200">
-                {user?.email?.split('@')[0] || 'User'}
+                {profile?.display_name || user?.email?.split('@')[0] || 'User'}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                 {user?.email}

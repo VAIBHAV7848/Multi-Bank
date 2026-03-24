@@ -3,18 +3,19 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
 import { useSupabaseData } from '../hooks/useSupabaseData';
+import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/formatters';
 import { Card, PageTransition } from '../components/ui';
 import { User, BellRing, Link2, CreditCard, Save } from 'lucide-react';
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const { addToast } = useToast();
   const { accounts } = useSupabaseData();
 
   // State
-  const [displayName, setDisplayName] = useState(user?.email?.split('@')[0] || '');
+  const [displayName, setDisplayName] = useState(profile?.display_name || user?.email?.split('@')[0] || '');
   const [currency, setCurrency] = useState(localStorage.getItem('currency') || 'INR');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   
@@ -46,7 +47,7 @@ export default function SettingsPage() {
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (connectedBankIds.length === 0) {
       addToast('You must connect at least one bank account', 'error');
       return;
@@ -56,7 +57,21 @@ export default function SettingsPage() {
     localStorage.setItem('spendingLimits', JSON.stringify(limits));
     localStorage.setItem('connectedBanks', JSON.stringify(connectedBankIds));
     
-    addToast('Settings saved successfully', 'success');
+    if (user?.id) {
+      try {
+        await supabase.from('profiles').update({
+          display_name: displayName,
+          preferences: { currency, theme: isDarkMode ? 'dark' : 'light' }
+        }).eq('id', user.id);
+        
+        refreshProfile(); // <--- Update the global state immediately
+        addToast('Settings saved successfully', 'success');
+      } catch (e) {
+        addToast('Error syncing profile to server', 'error');
+      }
+    } else {
+      addToast('Settings saved to device', 'success');
+    }
   };
 
   return (
@@ -186,7 +201,7 @@ export default function SettingsPage() {
                         <p className={`font-semibold text-sm ${isConnected ? 'text-blue-900 dark:text-blue-100' : 'text-slate-700 dark:text-slate-300'}`}>
                           {acc.bank_name}
                         </p>
-                        <p className="text-xs text-slate-500 font-mono">••• {acc.account_number.slice(-4)}</p>
+                        <p className="text-xs text-slate-500 font-mono">••• {(acc.masked_number || acc.maskedAccNumber || 'xxxx').slice(-4)}</p>
                       </div>
                     </div>
                     

@@ -17,6 +17,10 @@ export function AuthProvider({ children }) {
     } catch(e) { console.error('Error fetching profile', e); }
   };
 
+  const refreshProfile = () => {
+    if (user?.id) fetchProfile(user.id);
+  };
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -49,6 +53,7 @@ export function AuthProvider({ children }) {
     user,
     profile,
     loading,
+    refreshProfile,
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
     signUp: (email, password) => supabase.auth.signUp({ email, password }),
     signInWithGoogle: () => supabase.auth.signInWithOAuth({
