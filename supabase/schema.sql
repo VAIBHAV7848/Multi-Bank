@@ -2,6 +2,13 @@
 -- FINCLARIO PRODUCTION ROBUST SUPABASE SCHEMA
 -- ----------------------------------------------------
 
+-- CLEANUP EXISTING TABLES (Safe for dev reset)
+DROP TABLE IF EXISTS public.transactions CASCADE;
+DROP TABLE IF EXISTS public.accounts CASCADE;
+DROP TABLE IF EXISTS public.goals CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
+DROP TYPE IF EXISTS public.transaction_type CASCADE;
+
 -- 1. Create PROFILES table to track setup status
 CREATE TABLE public.profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
