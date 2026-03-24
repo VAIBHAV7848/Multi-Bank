@@ -35,6 +35,10 @@ export function AuthProvider({ children }) {
     loading,
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
     signUp: (email, password) => supabase.auth.signUp({ email, password }),
+    signInWithGoogle: () => supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    }),
     signOut: () => {
       // Clear specific front-end state if needed, but primary is Supabase
       localStorage.removeItem('setupComplete');
