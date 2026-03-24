@@ -17,8 +17,14 @@ import {
   Landmark,
   ShieldCheck,
   FileText,
-  Globe
+  Globe,
+  PlayCircle,
+  AlertTriangle,
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
+
+const API_BASE = '';
 
 // Placeholders for screens
 import DashboardPage from './DashboardPage';
@@ -57,12 +63,59 @@ export default function AppShell() {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const langRef = useRef(null);
 
+  // Demo Simulation State
+  const [demoState, setDemoState] = useState('idle'); // idle, scanning, sending, success, error
+
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e) => { if (langRef.current && !langRef.current.contains(e.target)) setShowLangMenu(false); };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Hackathon Global Demo Script
+  const runMasterDemo = async () => {
+    if (demoState !== 'idle' && demoState !== 'success' && demoState !== 'error') return;
+    
+    setDemoState('scanning');
+    
+    // Step 1: Simulate scanning
+    await new Promise(r => setTimeout(r, 1500));
+    setDemoState('sending');
+
+    try {
+      // Step 2: Auto-fetch Chat ID
+      const updatesRes = await fetch(`${API_BASE}/api/telegram/updates`);
+      const updatesData = await updatesRes.json();
+      
+      if (!updatesData.success || !updatesData.chats || updatesData.chats.length === 0) {
+        setDemoState('error');
+        setTimeout(() => setDemoState('idle'), 5000);
+        return;
+      }
+      const targetChatId = updatesData.chats[0].chatId;
+
+      // Step 3: Fire Master Payload
+      const message = `🚨 <b>FINCLARIO CRITICAL INCIDENT SIMULATION</b>\n\n⚠️ Suspicious transaction of ₹50,000 detected right now during the presentation!\n\n🛡️ Our AI has temporarily frozen the account. Please review on the dashboard.\n\n🕐 ${new Date().toLocaleString('en-IN')}`;
+      
+      const res = await fetch(`${API_BASE}/api/telegram/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId: targetChatId, message }),
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        setDemoState('success');
+      } else {
+        setDemoState('error');
+      }
+    } catch (e) {
+      setDemoState('error');
+    }
+
+    setTimeout(() => setDemoState('idle'), 4000);
+  };
 
   // Mock checking local storage for unread alerts
   const unreadAlerts = 2;
@@ -258,6 +311,47 @@ export default function AppShell() {
         </div>
       </nav>
       
+      {/* GLOBAL DEMO BUTTON FOR JUDGES */}
+      <div className="fixed bottom-20 md:bottom-8 right-4 md:right-8 z-50 flex flex-col items-end gap-3">
+        {/* Toast Notification Container */}
+        {demoState !== 'idle' && (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4 w-72 animate-slide-up flex flex-col gap-2">
+            {demoState === 'scanning' && (
+              <div className="flex items-center gap-3 text-orange-600 dark:text-orange-400">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="font-semibold text-sm">Detecting live anomalies...</span>
+              </div>
+            )}
+            {demoState === 'sending' && (
+              <div className="flex items-center gap-3 text-blue-600 dark:text-blue-400">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="font-semibold text-sm">Pushing alert to Judge's phone...</span>
+              </div>
+            )}
+            {demoState === 'success' && (
+              <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="w-5 h-5" />
+                <span className="font-semibold text-sm">Alert Sent Successfully!</span>
+              </div>
+            )}
+            {demoState === 'error' && (
+              <div className="flex items-start gap-3 text-red-600 dark:text-red-400">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <span className="font-semibold text-xs leading-tight">Send a message to the bot first to register your Chat ID.</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Floating Action Button */}
+        <button 
+          onClick={runMasterDemo}
+          className="group flex items-center gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-xl shadow-fuchsia-900/40 px-5 py-3 rounded-full font-bold transition-all hover:scale-105 active:scale-95 border-2 border-white/20"
+        >
+          <PlayCircle className="w-5 h-5" />
+          <span className="hidden md:inline">Run Demo Script</span>
+        </button>
+      </div>
 
     </div>
   );
