@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
+import { LanguageProvider } from './context/LanguageContext';
 import AppShell from './pages/AppShell';
 import LoginPage from './pages/LoginPage';
 import SetupPage from './pages/SetupPage';
@@ -32,15 +33,17 @@ function ProtectedRoute({ children }) {
 
 function App() {
   return (
-    <ThemeProvider>
-      <ToastProvider>
-        <AuthProvider>
-          <ProtectedRoute>
-            <AppShell />
-          </ProtectedRoute>
-        </AuthProvider>
-      </ToastProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <ProtectedRoute>
+              <AppShell />
+            </ProtectedRoute>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }
 

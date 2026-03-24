@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useSupabaseData } from '../hooks/useSupabaseData';
+import { useLanguage } from '../context/LanguageContext';
 import { 
   LayoutDashboard, 
   ArrowLeftRight, 
@@ -15,7 +16,8 @@ import {
   BrainCircuit,
   Landmark,
   ShieldCheck,
-  FileText
+  FileText,
+  Globe
 } from 'lucide-react';
 
 // Placeholders for screens
@@ -29,7 +31,8 @@ import AIInsightsPage from './AIInsightsPage';
 import SchemesPage from './SchemesPage';
 import CreditScorePage from './CreditScorePage';
 import ReportsPage from './ReportsPage';
-import LiveSimulator from '../components/LiveSimulator';
+
+import BankDashboard from './BankDashboard';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -40,6 +43,7 @@ const NAV_ITEMS = [
   { id: 'schemes', label: 'Loans & Schemes', icon: Landmark },
   { id: 'credit', label: 'Credit Score', icon: ShieldCheck },
   { id: 'reports', label: 'Reports', icon: FileText },
+  { id: 'bankaa', label: 'Bank AA', icon: Landmark },
   { id: 'alerts', label: 'Alerts', icon: Bell },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
@@ -49,9 +53,19 @@ export default function AppShell() {
   const { user, signOut } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const { lastSynced } = useSupabaseData();
+  const { t, language, changeLanguage, languages, currentLanguage } = useLanguage();
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const langRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => { if (langRef.current && !langRef.current.contains(e.target)) setShowLangMenu(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   // Mock checking local storage for unread alerts
-  const unreadAlerts = 2; // In a real app, calculate from alerts data
+  const unreadAlerts = 2;
 
   const renderContent = () => {
     switch (activeTab) {
@@ -63,13 +77,14 @@ export default function AppShell() {
       case 'schemes': return <SchemesPage />;
       case 'credit': return <CreditScorePage />;
       case 'reports': return <ReportsPage />;
+      case 'bankaa': return <BankDashboard />;
       case 'alerts': return <AlertsPage />;
       case 'settings': return <SettingsPage />;
       default: return <DashboardPage />;
     }
   };
 
-  const activeLabel = NAV_ITEMS.find(i => i.id === activeTab)?.label || 'Dashboard';
+  const activeLabel = t(`nav.${activeTab}`) || NAV_ITEMS.find(i => i.id === activeTab)?.label || 'Dashboard';
   const timeStr = lastSynced ? Math.floor((new Date() - lastSynced) / 60000) : 0;
 
   return (
@@ -99,7 +114,7 @@ export default function AppShell() {
                 }`}
               >
                 <Icon className={`w-5 h-5 ${isActive ? 'text-white' : ''}`} />
-                {item.label}
+                {t(`nav.${item.id}`) || item.label}
                 {item.id === 'alerts' && unreadAlerts > 0 && (
                   <span className={`ml-auto text-xs py-0.5 px-2 rounded-full font-bold ${
                     isActive ? 'bg-white text-blue-600' : 'bg-red-500 text-white'
@@ -153,8 +168,39 @@ export default function AppShell() {
           <div className="flex items-center gap-2 sm:gap-4">
             <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-mint animate-pulse"></span>
-              Synced {timeStr === 0 ? 'just now' : `${timeStr}m ago`}
+              {timeStr === 0 ? t('common.syncedJustNow') : t('common.syncedAgo', { time: timeStr })}
             </span>
+            
+            {/* Language Switcher */}
+            <div className="relative" ref={langRef}>
+              <button
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-xs font-medium"
+                aria-label="Change language"
+              >
+                <Globe className="w-4 h-4" />
+                <span className="hidden sm:inline">{currentLanguage.native}</span>
+              </button>
+              {showLangMenu && (
+                <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden animate-slide-up">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => { changeLanguage(lang.code); setShowLangMenu(false); }}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
+                        language === lang.code
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="text-base">{lang.flag}</span>
+                      <span>{lang.native}</span>
+                      {language === lang.code && <span className="ml-auto text-blue-500">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             
             <button 
               onClick={toggleTheme}
@@ -205,14 +251,14 @@ export default function AppShell() {
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
                   )}
                 </div>
-                <span className="text-[10px] font-medium leading-none">{item.label}</span>
+                <span className="text-[10px] font-medium leading-none">{t(`nav.${item.id}`) || item.label}</span>
               </button>
             );
           })}
         </div>
       </nav>
       
-      <LiveSimulator />
+
     </div>
   );
 }
